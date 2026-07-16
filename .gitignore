@@ -4,3 +4,14 @@ firmware/.pio/
 
 # macOS
 .DS_Store
+
+# Secrets (Wi-Fi credentials) — keep out of the repo
+firmware/src/secrets.h
+firmware/telemetry/secrets.h
+
+# arduino-cli build output
+firmware/**/build/
+
+# scratch backups of alternate firmware versions
+firmware/src/*.m2bak
+firmware/src/*.wifitest
