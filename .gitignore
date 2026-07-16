@@ -1,0 +1,6 @@
+# PlatformIO
+.pio/
+firmware/.pio/
+
+# macOS
+.DS_Store
