@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: telegraf-config
+  namespace: iot
+data:
+  telegraf.conf: |
+    [agent]
+      interval = "10s"
+      flush_interval = "10s"
+      hostname = ""
+      omit_hostname = true
+
+    [[inputs.mqtt_consumer]]
+      servers = ["tcp://mosquitto.iot.svc.cluster.local:1883"]
+      topics = ["sensors/#"]
+      client_id = "telegraf-iot"
+      qos = 0
+      data_format = "json"
+      name_override = "telemetry"
+      # site/room come from topic_parsing below; the raw topic tag would duplicate
+      # them and add series cardinality for nothing.
+      topic_tag = ""
+
+      # sensors/<site>/<room> -> tags site, room. "_" discards a segment.
+      [[inputs.mqtt_consumer.topic_parsing]]
+        topic = "sensors/+/+"
+        tags = "_/site/room"
+
+    [[outputs.influxdb_v2]]
+      urls = ["http://influxdb.iot.svc.cluster.local:8086"]
+      token = "${INFLUX_TOKEN}"
+      organization = "${INFLUX_ORG}"
+      bucket = "${INFLUX_BUCKET}"

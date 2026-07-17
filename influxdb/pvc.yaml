@@ -5,8 +5,9 @@ metadata:
   namespace: iot
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
-      storage: 2Gi
-  storageClassName: local-path
+      storage: 10Gi
+  storageClassName: ""
+  volumeName: influxdb-nfs-pv

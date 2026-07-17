@@ -7,6 +7,11 @@ metadata:
     app: influxdb
 spec:
   replicas: 1
+  # Recreate, not RollingUpdate: the PVC is RWX (NFS), so a rolling update would
+  # start the new pod while the old one still holds /var/lib/influxdb2 — two
+  # InfluxDB processes writing the same bolt/TSM files. Tear the old pod down first.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: influxdb
@@ -52,9 +57,6 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /var/lib/influxdb2
-        - name: config
-          mountPath: /etc/influxdb2/influxdb.conf
-          subPath: influxdb.conf
         livenessProbe:
           httpGet:
             path: /health
@@ -71,6 +73,3 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: influxdb-data
-      - name: config
-        configMap:
-          name: influxdb-config
