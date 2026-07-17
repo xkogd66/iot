@@ -1,0 +1,13 @@
+{
+  "name": "iot-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hourly telemetry averages per site, read from InfluxDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

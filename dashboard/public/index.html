@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IoT telemetry</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font: 16px/1.5 system-ui, -apple-system, sans-serif;
+      max-width: 40rem; margin: 0 auto; padding: 2rem 1rem;
+    }
+    h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1.5rem; }
+    select { font: inherit; padding: .4rem .5rem; }
+    .cards {
+      display: grid; gap: 1rem; margin-top: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    }
+    .card {
+      border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+      border-radius: .5rem; padding: 1rem;
+    }
+    .label { font-size: .8rem; opacity: .7; }
+    .value { font-size: 2rem; font-variant-numeric: tabular-nums; }
+    .unit { font-size: 1rem; opacity: .6; }
+    .note { margin-top: 1.5rem; font-size: .8rem; opacity: .6; }
+    .error { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>Telemetry — 1 hour average</h1>
+
+  <label>Site <select id="site"></select></label>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">Temperature</div>
+      <div class="value"><span id="temp">–</span><span class="unit"> °C</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Humidity</div>
+      <div class="value"><span id="humidity">–</span><span class="unit"> %</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Pressure</div>
+      <div class="value"><span id="pressure">–</span><span class="unit"> hPa</span></div>
+    </div>
+  </div>
+
+  <p class="note" id="note">Loading…</p>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const sel = $('site');
+
+    function fail(message) {
+      $('note').className = 'note error';
+      $('note').textContent = message;
+    }
+
+    async function loadSites() {
+      const r = await fetch('/api/sites');
+      const { sites, error } = await r.json();
+      if (error) throw new Error(error);
+      if (!sites.length) throw new Error('no sites reporting');
+      sel.innerHTML = sites.map((s) => `<option>${s}</option>`).join('');
+    }
+
+    async function refresh() {
+      if (!sel.value) return;
+      try {
+        const r = await fetch(`/api/summary?site=${encodeURIComponent(sel.value)}`);
+        const d = await r.json();
+        if (d.error) throw new Error(d.error);
+        for (const f of ['temp', 'humidity', 'pressure']) {
+          $(f).textContent = d.averages[f] ?? '–';
+        }
+        $('note').className = 'note';
+        $('note').textContent = Object.keys(d.averages).length
+          ? 'Updated ' + new Date().toLocaleTimeString()
+          : 'No data in the last hour.';
+      } catch (e) {
+        fail(e.message);
+      }
+    }
+
+    sel.addEventListener('change', refresh);
+    loadSites().then(refresh).catch((e) => fail(e.message));
+    setInterval(refresh, 30000);
+  </script>
+</body>
+</html>

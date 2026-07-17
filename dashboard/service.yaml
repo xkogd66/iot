@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dashboard
+  namespace: iot
+spec:
+  type: LoadBalancer
+  selector:
+    app: dashboard
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
