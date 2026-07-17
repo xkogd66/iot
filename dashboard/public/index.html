@@ -25,6 +25,17 @@
     .unit { font-size: 1rem; opacity: .6; }
     .note { margin-top: 1.5rem; font-size: .8rem; opacity: .6; }
     .error { color: #c00; }
+    .status {
+      margin-top: 1rem; font-size: .9rem;
+      display: inline-flex; align-items: center; gap: .5rem;
+    }
+    .status::before {
+      content: ""; width: .6rem; height: .6rem; border-radius: 50%;
+      background: #9ca3af;
+    }
+    .status.up::before { background: #22c55e; }
+    .status.down { color: #ef4444; }
+    .status.down::before { background: #ef4444; }
     button { font: inherit; padding: .4rem .6rem; }
     .charts { margin-top: 2rem; display: grid; gap: 1rem; }
     .charts[hidden] { display: none; }
@@ -46,6 +57,8 @@
     </select>
     <button id="toggle-charts" type="button">Show charts</button>
   </label>
+
+  <div class="status" id="status">Checking…</div>
 
   <div class="cards">
     <div class="card">
@@ -81,6 +94,33 @@
     // from grafana/values.yaml — keep them in sync.
     const GRAFANA = 'http://192.168.1.218';
     const PANELS = { temp: 1, humidity: 2, pressure: 3 };
+
+    // A board that's up publishes every ~minute; allow a few missed sends before
+    // calling it down so a single dropped message doesn't flip the indicator.
+    const STALE_MS = 3 * 60 * 1000;
+
+    function relTime(ms) {
+      const s = Math.round(ms / 1000);
+      if (s < 60) return `${s}s ago`;
+      const m = Math.round(s / 60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.round(m / 60);
+      if (h < 24) return `${h}h ago`;
+      return `${Math.round(h / 24)}d ago`;
+    }
+
+    function setStatus(lastSeen) {
+      const el = $('status');
+      if (!lastSeen) {
+        el.className = 'status down';
+        el.textContent = 'Offline — no data in the last 24h';
+        return;
+      }
+      const age = Date.now() - new Date(lastSeen).getTime();
+      const up = age < STALE_MS;
+      el.className = up ? 'status up' : 'status down';
+      el.textContent = `${up ? 'Online' : 'Offline'} — last seen ${relTime(age)}`;
+    }
 
     // Charts are opt-in: three live Grafana panels each proxy Flux queries into
     // InfluxDB on a refresh loop, so we only load their iframes once the user
@@ -124,6 +164,7 @@
         for (const f of ['temp', 'humidity', 'pressure']) {
           $(f).textContent = d.averages[f] ?? '–';
         }
+        setStatus(d.lastSeen);
         $('note').className = 'note';
         $('note').textContent = Object.keys(d.averages).length
           ? 'Updated ' + new Date().toLocaleTimeString()

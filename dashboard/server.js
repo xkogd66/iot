@@ -86,6 +86,22 @@ async function siteAverages(site) {
   return out;
 }
 
+// Timestamp of the site's most recent point, or null if it hasn't reported in
+// the last day. The dashboard turns this into an up/down indicator: a board
+// that's been unplugged simply stops writing, so a stale newest point is "down".
+async function siteLastSeen(site) {
+  const rows = await flux(
+    `from(bucket: "${INFLUX_BUCKET}")\n` +
+      `  |> range(start: -24h)\n` +
+      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
+      `  |> filter(fn: (r) => r.site == "${site}")\n` +
+      `  |> group()\n` +
+      `  |> last()`,
+  );
+  const times = rows.map((r) => r._time).filter(Boolean).sort();
+  return times.at(-1) ?? null;
+}
+
 function send(res, code, body, type) {
   res.writeHead(code, { 'Content-Type': type, 'Content-Length': Buffer.byteLength(body) });
   res.end(body);
@@ -108,7 +124,8 @@ const server = http.createServer(async (req, res) => {
       if (!SITE_RE.test(site) || !known.includes(site)) {
         return json(res, 400, { error: 'unknown site' });
       }
-      json(res, 200, { site, window: '1h', averages: await siteAverages(site) });
+      const [averages, lastSeen] = await Promise.all([siteAverages(site), siteLastSeen(site)]);
+      json(res, 200, { site, window: '1h', averages, lastSeen });
     } else {
       json(res, 404, { error: 'not found' });
     }

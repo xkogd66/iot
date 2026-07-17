@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: iot
+  labels:
+    app: grafana
+spec:
+  replicas: 1
+  # Recreate, not RollingUpdate: /var/lib/grafana is a single RWO PVC, so a
+  # rolling update would try to start the new pod while the old one still holds
+  # the volume. Tear the old pod down first.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      # Grafana runs as uid/gid 472; fsGroup lets it write the local-path PVC.
+      securityContext:
+        runAsUser: 472
+        runAsGroup: 472
+        fsGroup: 472
+      containers:
+      - name: grafana
+        image: grafana/grafana:12.3.1
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        # grafana.ini settings via GF_ overrides.
+        - name: GF_SERVER_ROOT_URL
+          value: http://192.168.1.218
+        # Required for /d-solo/ iframes: without it Grafana sends
+        # X-Frame-Options: deny and the embed is refused.
+        - name: GF_SECURITY_ALLOW_EMBEDDING
+          value: "true"
+        # Without anonymous access the iframe redirects to /login instead of
+        # rendering a panel.
+        - name: GF_AUTH_ANONYMOUS_ENABLED
+          value: "true"
+        - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+          value: Viewer
+        - name: GF_SECURITY_ADMIN_USER
+          value: admin
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          value: admin
+        # Interpolated into the provisioned datasource (secureJsonData.token:
+        # $INFLUX_TOKEN), from the same secret Telegraf and InfluxDB use.
+        - name: INFLUX_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-auth
+              key: admin-token
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/grafana
+        - name: datasources
+          mountPath: /etc/grafana/provisioning/datasources
+        - name: dashboard-provider
+          mountPath: /etc/grafana/provisioning/dashboards
+        - name: dashboard-telemetry
+          mountPath: /var/lib/grafana/dashboards/iot
+        livenessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: grafana-data
+      - name: datasources
+        configMap:
+          name: grafana-datasources
+      - name: dashboard-provider
+        configMap:
+          name: grafana-dashboard-provider
+      - name: dashboard-telemetry
+        configMap:
+          name: grafana-dashboard-telemetry
