@@ -10,13 +10,17 @@ small home sensor network.
 
 ```mermaid
 flowchart TB
-    subgraph boards["Boards (Wi-Fi)"]
+    subgraph hbvu["hbvu — local site"]
         B1["AZ3166<br/>sensors/hbvu/office"]
+    end
+
+    subgraph remote["Remote sites — over the internet"]
         B2["AZ3166<br/>sensors/pueblodry/livingroom"]
+        B3["AZ3166<br/>sensors/amager/…<br/><i>planned</i>"]
     end
 
     subgraph mini["mac mini — dual-homed border host"]
-        NGINX["nginx stream<br/>213.112.57.213:1883"]
+        NGINX["nginx stream<br/>iot.ekskog.net:1883"]
     end
 
     subgraph k3s["k3s cluster — namespace: iot"]
@@ -27,11 +31,10 @@ flowchart TB
     end
 
     WEB(["Browser"])
-    EXT(["External MQTT client<br/>iot.ekskog.net:1883"])
 
     B1 -- "MQTT 1883 (LAN)" --> MOSQ
-    B2 -- "MQTT 1883 (LAN)" --> MOSQ
-    EXT --> NGINX
+    B2 -- "MQTT 1883 (public)" --> NGINX
+    B3 -. "planned" .-> NGINX
     NGINX -- "TCP proxy" --> MOSQ
     MOSQ -- "subscribe sensors/#" --> TELE
     TELE -- "write bucket: iot-data" --> INFLUX
@@ -40,7 +43,10 @@ flowchart TB
 ```
 
 The cluster is the hub. Boards are dumb MQTT publishers — no buffering, no retries beyond
-reconnect. All aggregation, storage, and presentation happen in-cluster.
+reconnect, so a remote site's readings are simply lost while its internet is down.
+
+**Sites:** `hbvu` is local to the cluster and publishes over the LAN. `pueblodry` and the
+planned `amager` are remote and publish through `iot.ekskog.net`.
 
 ### Data flow
 

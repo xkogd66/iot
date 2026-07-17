@@ -25,12 +25,27 @@
     .unit { font-size: 1rem; opacity: .6; }
     .note { margin-top: 1.5rem; font-size: .8rem; opacity: .6; }
     .error { color: #c00; }
+    button { font: inherit; padding: .4rem .6rem; }
+    .charts { margin-top: 2rem; display: grid; gap: 1rem; }
+    .charts[hidden] { display: none; }
+    .charts iframe {
+      width: 100%; height: 14rem; border: 0;
+      border-radius: .5rem;
+      background: color-mix(in srgb, currentColor 4%, transparent);
+    }
   </style>
 </head>
 <body>
   <h1>Telemetry — 1 hour average</h1>
 
-  <label>Site <select id="site"></select></label>
+  <label>Site <select id="site"></select>
+    <select id="range">
+      <option value="now-6h">last 6h</option>
+      <option value="now-24h">last 24h</option>
+      <option value="now-7d">last 7 days</option>
+    </select>
+    <button id="toggle-charts" type="button">Show charts</button>
+  </label>
 
   <div class="cards">
     <div class="card">
@@ -49,9 +64,43 @@
 
   <p class="note" id="note">Loading…</p>
 
+  <div class="charts" id="charts" hidden>
+    <iframe id="chart-temp" loading="lazy" title="Temperature over time"></iframe>
+    <iframe id="chart-humidity" loading="lazy" title="Humidity over time"></iframe>
+    <iframe id="chart-pressure" loading="lazy" title="Pressure over time"></iframe>
+  </div>
+
   <script>
     const $ = (id) => document.getElementById(id);
     const sel = $('site');
+    const range = $('range');
+    const charts = $('charts');
+    const toggle = $('toggle-charts');
+
+    // Grafana renders the charts; this page is the front door. Panel ids come
+    // from grafana/values.yaml — keep them in sync.
+    const GRAFANA = 'http://192.168.1.218';
+    const PANELS = { temp: 1, humidity: 2, pressure: 3 };
+
+    // Charts are opt-in: three live Grafana panels each proxy Flux queries into
+    // InfluxDB on a refresh loop, so we only load their iframes once the user
+    // asks, and only redraw them while they're on screen.
+    function drawCharts() {
+      if (charts.hidden || !sel.value) return;
+      const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+      for (const [field, panelId] of Object.entries(PANELS)) {
+        const url = new URL(`${GRAFANA}/d-solo/iot-telemetry/telemetry`);
+        url.search = new URLSearchParams({
+          orgId: '1',
+          panelId: String(panelId),
+          'var-site': sel.value,
+          from: range.value,
+          to: 'now',
+          theme: dark ? 'dark' : 'light',
+        });
+        $(`chart-${field}`).src = url.toString();
+      }
+    }
 
     function fail(message) {
       $('note').className = 'note error';
@@ -84,7 +133,20 @@
       }
     }
 
-    sel.addEventListener('change', refresh);
+    function clearCharts() {
+      for (const field of Object.keys(PANELS)) $(`chart-${field}`).removeAttribute('src');
+    }
+
+    toggle.addEventListener('click', () => {
+      charts.hidden = !charts.hidden;
+      toggle.textContent = charts.hidden ? 'Show charts' : 'Hide charts';
+      if (charts.hidden) clearCharts();
+      else drawCharts();
+    });
+
+    // Site/range changes redraw the panels only when they're already visible.
+    sel.addEventListener('change', () => { refresh(); drawCharts(); });
+    range.addEventListener('change', drawCharts);
     loadSites().then(refresh).catch((e) => fail(e.message));
     setInterval(refresh, 30000);
   </script>
