@@ -3,79 +3,171 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>IoT telemetry</title>
+  <title>Ekskog Estate Monitoring</title>
   <style>
-    :root { color-scheme: light dark; }
-    body {
-      font: 16px/1.5 system-ui, -apple-system, sans-serif;
-      max-width: 40rem; margin: 0 auto; padding: 2rem 1rem;
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f7f9;
+      --surface: #ffffff;
+      --ink: #1b1e22;
+      --ink-2: #6a7178;
+      --line: #e6e8eb;
+      --accent: #2563eb;
+      --up: #16a34a;
+      --down: #dc2626;
+      --idle: #9ca3af;
+      --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 1px 3px rgba(16, 24, 40, .04);
     }
-    h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 1.5rem; }
-    select { font: inherit; padding: .4rem .5rem; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d0f12;
+        --surface: #16191e;
+        --ink: #e7e9ec;
+        --ink-2: #98a0a8;
+        --line: #262b31;
+        --accent: #3b82f6;
+        --up: #22c55e;
+        --down: #f87171;
+        --idle: #6b7280;
+        --shadow: none;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--ink); background: var(--bg);
+      max-width: 44rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header h1 {
+      margin: 0; font-size: .95rem; font-weight: 650;
+      letter-spacing: .09em; text-transform: uppercase;
+    }
+    header p { margin: .35rem 0 0; font-size: .8rem; color: var(--ink-2); }
+
+    .controls {
+      display: flex; flex-wrap: wrap; align-items: flex-end; gap: .9rem;
+      margin-top: 1.75rem;
+    }
+    .field {
+      display: flex; flex-direction: column; gap: .3rem;
+      font-size: .7rem; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--ink-2);
+    }
+    .field select {
+      font: inherit; font-size: .9rem; font-weight: 400;
+      letter-spacing: 0; text-transform: none;
+      color: var(--ink); background: var(--surface);
+      border: 1px solid var(--line); border-radius: .5rem; padding: .45rem .6rem;
+    }
+
+    .sites { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; }
+    .pill {
+      display: inline-flex; align-items: center; gap: .45rem;
+      font-size: .82rem; color: var(--ink-2);
+      padding: .3rem .7rem .3rem .6rem; border: 1px solid var(--line);
+      border-radius: 999px; background: var(--surface);
+    }
+    .pill::before {
+      content: ""; width: .55rem; height: .55rem; border-radius: 50%;
+      background: var(--idle); flex: none;
+    }
+    .pill .site { font-weight: 600; color: var(--ink); }
+    .pill .meta { color: var(--ink-2); }
+    .pill.up::before { background: var(--up); }
+    .pill.down { border-color: color-mix(in srgb, var(--down) 35%, var(--line)); }
+    .pill.down::before { background: var(--down); }
+    .pill.down .site { color: var(--down); }
+
     .cards {
-      display: grid; gap: 1rem; margin-top: 1.5rem;
-      grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+      display: grid; gap: .9rem; margin-top: 1.25rem;
+      grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
     }
     .card {
-      border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-      border-radius: .5rem; padding: 1rem;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: .75rem; padding: 1.1rem 1.15rem; box-shadow: var(--shadow);
     }
-    .label { font-size: .8rem; opacity: .7; }
-    .value { font-size: 2rem; font-variant-numeric: tabular-nums; }
-    .unit { font-size: 1rem; opacity: .6; }
-    .note { margin-top: 1.5rem; font-size: .8rem; opacity: .6; }
-    .error { color: #c00; }
-    .status {
-      margin-top: 1rem; font-size: .9rem;
-      display: inline-flex; align-items: center; gap: .5rem;
+    .card .label {
+      font-size: .7rem; font-weight: 600; letter-spacing: .05em;
+      text-transform: uppercase; color: var(--ink-2);
     }
-    .status::before {
-      content: ""; width: .6rem; height: .6rem; border-radius: 50%;
-      background: #9ca3af;
+    .card .value {
+      font-size: 2.1rem; font-weight: 600; line-height: 1;
+      font-variant-numeric: tabular-nums; margin-top: .4rem;
     }
-    .status.up::before { background: #22c55e; }
-    .status.down { color: #ef4444; }
-    .status.down::before { background: #ef4444; }
-    button { font: inherit; padding: .4rem .6rem; }
-    .charts { margin-top: 2rem; display: grid; gap: 1rem; }
+    .card .unit { font-size: .95rem; font-weight: 500; color: var(--ink-2); margin-left: .1rem; }
+
+    .note { margin-top: 1.25rem; font-size: .78rem; color: var(--ink-2); }
+    .note.error { color: var(--down); }
+
+    .toggle {
+      margin-top: 2rem; display: inline-flex; align-items: center; gap: .5rem;
+      font: inherit; font-size: .88rem; font-weight: 500; cursor: pointer;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+      border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+      border-radius: .5rem; padding: .55rem .9rem;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    .toggle:hover { background: color-mix(in srgb, var(--accent) 15%, var(--surface)); }
+    .toggle::after {
+      content: "\25be"; font-size: .8em; transition: transform .15s ease;
+    }
+    .toggle.open::after { transform: rotate(180deg); }
+
+    .charts { margin-top: 1rem; display: grid; gap: .9rem; }
     .charts[hidden] { display: none; }
     .charts iframe {
-      width: 100%; height: 14rem; border: 0;
-      border-radius: .5rem;
-      background: color-mix(in srgb, currentColor 4%, transparent);
+      width: 100%; height: 15rem; border: 1px solid var(--line);
+      border-radius: .75rem; background: var(--surface);
+    }
+
+    select:focus-visible, .toggle:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
     }
   </style>
 </head>
 <body>
-  <h1>Telemetry — 1 hour average</h1>
+  <header>
+    <h1>Ekskog Estate Monitoring</h1>
+    <p>1-hour averages, live from InfluxDB</p>
+  </header>
 
-  <label>Site <select id="site"></select>
-    <select id="range">
-      <option value="now-6h">last 6h</option>
-      <option value="now-24h">last 24h</option>
-      <option value="now-7d">last 7 days</option>
-    </select>
-    <button id="toggle-charts" type="button">Show charts</button>
-  </label>
+  <div class="sites" id="sites"></div>
 
-  <div class="status" id="status">Checking…</div>
+  <div class="controls">
+    <label class="field">Site
+      <select id="site"></select>
+    </label>
+    <label class="field">Range
+      <select id="range">
+        <option value="now-6h">last 6h</option>
+        <option value="now-24h">last 24h</option>
+        <option value="now-7d">last 7 days</option>
+      </select>
+    </label>
+  </div>
 
   <div class="cards">
     <div class="card">
       <div class="label">Temperature</div>
-      <div class="value"><span id="temp">–</span><span class="unit"> °C</span></div>
+      <div class="value"><span id="temp">–</span><span class="unit">°C</span></div>
     </div>
     <div class="card">
       <div class="label">Humidity</div>
-      <div class="value"><span id="humidity">–</span><span class="unit"> %</span></div>
+      <div class="value"><span id="humidity">–</span><span class="unit">%</span></div>
     </div>
     <div class="card">
       <div class="label">Pressure</div>
-      <div class="value"><span id="pressure">–</span><span class="unit"> hPa</span></div>
+      <div class="value"><span id="pressure">–</span><span class="unit">hPa</span></div>
     </div>
   </div>
 
   <p class="note" id="note">Loading…</p>
+
+  <button id="toggle-charts" class="toggle" type="button">Show charts</button>
 
   <div class="charts" id="charts" hidden>
     <iframe id="chart-temp" loading="lazy" title="Temperature over time"></iframe>
@@ -91,7 +183,7 @@
     const toggle = $('toggle-charts');
 
     // Grafana renders the charts; this page is the front door. Panel ids come
-    // from grafana/values.yaml — keep them in sync.
+    // from grafana/configmap.yaml — keep them in sync.
     const GRAFANA = 'http://192.168.1.218';
     const PANELS = { temp: 1, humidity: 2, pressure: 3 };
 
@@ -109,17 +201,31 @@
       return `${Math.round(h / 24)}d ago`;
     }
 
-    function setStatus(lastSeen) {
-      const el = $('status');
-      if (!lastSeen) {
-        el.className = 'status down';
-        el.textContent = 'Offline — no data in the last 24h';
-        return;
-      }
+    function pillMeta(lastSeen) {
+      if (!lastSeen) return { up: false, meta: 'offline' };
       const age = Date.now() - new Date(lastSeen).getTime();
       const up = age < STALE_MS;
-      el.className = up ? 'status up' : 'status down';
-      el.textContent = `${up ? 'Online' : 'Offline'} — last seen ${relTime(age)}`;
+      return { up, meta: up ? relTime(age) : `offline · ${relTime(age)}` };
+    }
+
+    // One pill per site, showing which boards are reporting. The word "offline"
+    // (not just the red dot) marks the down state so it isn't color-alone.
+    async function renderSites() {
+      try {
+        const r = await fetch('/api/status');
+        const { statuses, error } = await r.json();
+        if (error) throw new Error(error);
+        $('sites').innerHTML = statuses
+          .map(({ site, lastSeen }) => {
+            const { up, meta } = pillMeta(lastSeen);
+            return `<span class="pill ${up ? 'up' : 'down'}">` +
+              `<span class="site">${site}</span>` +
+              `<span class="meta">${meta}</span></span>`;
+          })
+          .join('');
+      } catch (e) {
+        /* keep the last-rendered pills on a transient fetch error */
+      }
     }
 
     // Charts are opt-in: three live Grafana panels each proxy Flux queries into
@@ -164,7 +270,6 @@
         for (const f of ['temp', 'humidity', 'pressure']) {
           $(f).textContent = d.averages[f] ?? '–';
         }
-        setStatus(d.lastSeen);
         $('note').className = 'note';
         $('note').textContent = Object.keys(d.averages).length
           ? 'Updated ' + new Date().toLocaleTimeString()
@@ -180,6 +285,7 @@
 
     toggle.addEventListener('click', () => {
       charts.hidden = !charts.hidden;
+      toggle.classList.toggle('open', !charts.hidden);
       toggle.textContent = charts.hidden ? 'Show charts' : 'Hide charts';
       if (charts.hidden) clearCharts();
       else drawCharts();
@@ -188,8 +294,10 @@
     // Site/range changes redraw the panels only when they're already visible.
     sel.addEventListener('change', () => { refresh(); drawCharts(); });
     range.addEventListener('change', drawCharts);
-    loadSites().then(refresh).catch((e) => fail(e.message));
-    setInterval(refresh, 30000);
+
+    function tick() { refresh(); renderSites(); }
+    loadSites().then(tick).catch((e) => fail(e.message));
+    setInterval(tick, 30000);
   </script>
 </body>
 </html>

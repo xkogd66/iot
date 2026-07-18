@@ -102,6 +102,25 @@ async function siteLastSeen(site) {
   return times.at(-1) ?? null;
 }
 
+// Last-seen timestamp per site in one query (grouped by site), for the status
+// pills. Sites known to InfluxDB but silent for >24h simply won't appear here
+// and are reported with lastSeen: null (offline).
+async function allSitesLastSeen() {
+  const rows = await flux(
+    `from(bucket: "${INFLUX_BUCKET}")\n` +
+      `  |> range(start: -24h)\n` +
+      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
+      `  |> group(columns: ["site"])\n` +
+      `  |> last()\n` +
+      `  |> keep(columns: ["site", "_time"])`,
+  );
+  const out = {};
+  for (const r of rows) {
+    if (r.site && r._time) out[r.site] = r._time;
+  }
+  return out;
+}
+
 function send(res, code, body, type) {
   res.writeHead(code, { 'Content-Type': type, 'Content-Length': Buffer.byteLength(body) });
   res.end(body);
@@ -118,6 +137,10 @@ const server = http.createServer(async (req, res) => {
       send(res, 200, 'ok', 'text/plain');
     } else if (url.pathname === '/api/sites') {
       json(res, 200, { sites: await listSites() });
+    } else if (url.pathname === '/api/status') {
+      const [known, lastSeen] = await Promise.all([listSites(), allSitesLastSeen()]);
+      const statuses = known.map((s) => ({ site: s, lastSeen: lastSeen[s] ?? null }));
+      json(res, 200, { statuses });
     } else if (url.pathname === '/api/summary') {
       const site = url.searchParams.get('site') || '';
       const known = await listSites();

@@ -9,6 +9,12 @@ firmware/.pio/
 firmware/src/secrets.h
 firmware/telemetry/secrets.h
 
+# k8s secrets: only SealedSecrets (*.sealed.yaml) are safe to commit. Plaintext
+# Secret sources must never land in git — seal them, then delete the source.
+**/secret.yaml
+**/*.secret.yaml
+!**/*.sealed.yaml
+
 # arduino-cli build output
 firmware/**/build/
 
