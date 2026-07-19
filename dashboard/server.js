@@ -67,6 +67,28 @@ async function listSites() {
   return [...new Set(rows.map((r) => r._value).filter(Boolean))].sort();
 }
 
+// 1-hour mean of each field. `site` is validated against listSites() before
+// reaching here, so it cannot break out of the string literal below.
+async function siteAverages(site) {
+  const fieldFilter = FIELDS.map((f) => `r._field == "${f}"`).join(' or ');
+  const rows = await flux(
+    `from(bucket: "${INFLUX_BUCKET}")\n` +
+      `  |> range(start: -1h)\n` +
+      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
+      `  |> filter(fn: (r) => r.site == "${site}")\n` +
+      `  |> filter(fn: (r) => ${fieldFilter})\n` +
+      `  |> group(columns: ["_field"])\n` +
+      `  |> mean()`,
+  );
+  const out = {};
+  for (const r of rows) {
+    if (FIELDS.includes(r._field) && r._value) {
+      out[r._field] = Math.round(parseFloat(r._value) * 10) / 10;
+    }
+  }
+  return out;
+}
+
 // Max and min of each field over the window, each with the timestamp it
 // occurred. Flux max()/min() select the whole extreme row, so _time comes free.
 // `site` is validated against listSites() and `rangeFlux` against RANGES before
@@ -141,8 +163,11 @@ const server = http.createServer(async (req, res) => {
       if (!SITE_RE.test(site) || !known.includes(site)) {
         return json(res, 400, { error: 'unknown site' });
       }
-      const extremes = await siteExtremes(site, rangeFlux);
-      json(res, 200, { site, range: rangeKey, extremes });
+      const [averages, extremes] = await Promise.all([
+        siteAverages(site),
+        siteExtremes(site, rangeFlux),
+      ]);
+      json(res, 200, { site, range: rangeKey, averages, extremes });
     } else {
       json(res, 404, { error: 'not found' });
     }

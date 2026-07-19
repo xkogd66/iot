@@ -82,10 +82,29 @@
     .pill.down::before { background: var(--down); }
     .pill.down .site { color: var(--down); }
 
+    .section {
+      margin: 1.75rem 0 0; font-size: .7rem; font-weight: 600;
+      letter-spacing: .05em; text-transform: uppercase; color: var(--ink-2);
+    }
+    .section .muted { font-weight: 400; text-transform: none; letter-spacing: 0; }
+
     .cards {
-      display: grid; gap: .9rem; margin-top: 1.25rem;
+      display: grid; gap: .9rem; margin-top: .75rem;
       grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
     }
+    .ext-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .seg {
+      display: inline-flex; border: 1px solid var(--line);
+      border-radius: .45rem; overflow: hidden; flex: none;
+    }
+    .seg button {
+      font: inherit; font-size: .68rem; font-weight: 600; letter-spacing: .03em;
+      cursor: pointer; padding: .18rem .5rem; border: 0;
+      color: var(--ink-2); background: var(--surface);
+    }
+    .seg button + button { border-left: 1px solid var(--line); }
+    .seg button.on { color: #fff; background: var(--accent); }
+    .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
     .card {
       background: var(--surface); border: 1px solid var(--line);
       border-radius: .75rem; padding: 1.1rem 1.15rem; box-shadow: var(--shadow);
@@ -137,7 +156,7 @@
 <body>
   <header>
     <h1>Ekskog Estate Monitoring</h1>
-    <p>Max &amp; min per sensor, live from InfluxDB</p>
+    <p>Live from InfluxDB</p>
   </header>
 
   <div class="sites" id="sites"></div>
@@ -145,12 +164,6 @@
   <div class="controls">
     <label class="field">Site
       <select id="site"></select>
-    </label>
-    <label class="field">Show
-      <select id="agg">
-        <option value="max">Maximum</option>
-        <option value="min">Minimum</option>
-      </select>
     </label>
     <label class="field">Range
       <select id="range">
@@ -161,21 +174,56 @@
     </label>
   </div>
 
+  <h2 class="section">1-hour average</h2>
   <div class="cards">
     <div class="card">
       <div class="label">Temperature</div>
       <div class="value"><span id="temp">–</span><span class="unit">°C</span></div>
-      <div class="stamp" id="temp-t"></div>
     </div>
     <div class="card">
       <div class="label">Humidity</div>
       <div class="value"><span id="humidity">–</span><span class="unit">%</span></div>
-      <div class="stamp" id="humidity-t"></div>
     </div>
     <div class="card">
       <div class="label">Pressure</div>
       <div class="value"><span id="pressure">–</span><span class="unit">hPa</span></div>
-      <div class="stamp" id="pressure-t"></div>
+    </div>
+  </div>
+
+  <h2 class="section">Max / min <span id="ext-range" class="muted"></span></h2>
+  <div class="cards" id="ext-cards">
+    <div class="card ext" data-field="temp">
+      <div class="ext-head">
+        <span class="label">Temperature</span>
+        <span class="seg" role="group" aria-label="Temperature max or min">
+          <button type="button" data-agg="max" class="on" aria-pressed="true">Max</button>
+          <button type="button" data-agg="min" aria-pressed="false">Min</button>
+        </span>
+      </div>
+      <div class="value"><span class="v">–</span><span class="unit">°C</span></div>
+      <div class="stamp"></div>
+    </div>
+    <div class="card ext" data-field="humidity">
+      <div class="ext-head">
+        <span class="label">Humidity</span>
+        <span class="seg" role="group" aria-label="Humidity max or min">
+          <button type="button" data-agg="max" class="on" aria-pressed="true">Max</button>
+          <button type="button" data-agg="min" aria-pressed="false">Min</button>
+        </span>
+      </div>
+      <div class="value"><span class="v">–</span><span class="unit">%</span></div>
+      <div class="stamp"></div>
+    </div>
+    <div class="card ext" data-field="pressure">
+      <div class="ext-head">
+        <span class="label">Pressure</span>
+        <span class="seg" role="group" aria-label="Pressure max or min">
+          <button type="button" data-agg="max" class="on" aria-pressed="true">Max</button>
+          <button type="button" data-agg="min" aria-pressed="false">Min</button>
+        </span>
+      </div>
+      <div class="value"><span class="v">–</span><span class="unit">hPa</span></div>
+      <div class="stamp"></div>
     </div>
   </div>
 
@@ -193,7 +241,6 @@
     const $ = (id) => document.getElementById(id);
     const sel = $('site');
     const range = $('range');
-    const agg = $('agg');
     const charts = $('charts');
     const toggle = $('toggle-charts');
     let lastSummary = null;
@@ -283,24 +330,36 @@
       });
     }
 
-    // Draw from the stored summary — both max and min came in one fetch, so the
-    // Max/Min selector just re-renders without hitting the server.
+    // Everything below draws from the stored summary. Each max/min card carries
+    // both extremes, so toggling Max/Min in a card just re-renders — no refetch.
     function render() {
       if (!lastSummary) return;
-      const which = agg.value;
-      let any = false;
       for (const f of ['temp', 'humidity', 'pressure']) {
-        const e = lastSummary.extremes?.[f]?.[which];
-        $(f).textContent = e ? e.value : '–';
-        $(`${f}-t`).textContent = e ? fmtTime(e.time) : '';
-        if (e) any = true;
+        $(f).textContent = lastSummary.averages?.[f] ?? '–';
       }
-      const rangeLabel = range.options[range.selectedIndex].text;
+      $('ext-range').textContent = `· ${range.options[range.selectedIndex].text}`;
+      for (const card of document.querySelectorAll('.card.ext')) {
+        const field = card.dataset.field;
+        const which = card.querySelector('.seg .on').dataset.agg;
+        const e = lastSummary.extremes?.[field]?.[which];
+        card.querySelector('.v').textContent = e ? e.value : '–';
+        card.querySelector('.stamp').textContent = e ? fmtTime(e.time) : 'no data';
+      }
       $('note').className = 'note';
-      $('note').textContent = any
-        ? `${which === 'max' ? 'Max' : 'Min'} over ${rangeLabel} · updated ${new Date().toLocaleTimeString()}`
-        : 'No data in the selected range.';
+      $('note').textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
+
+    // Per-card Max/Min switch — flips this card only, redraws from stored data.
+    $('ext-cards').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('.seg button');
+      if (!btn) return;
+      for (const b of btn.parentElement.querySelectorAll('button')) {
+        const on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      }
+      render();
+    });
 
     async function refresh() {
       if (!sel.value) return;
@@ -330,10 +389,9 @@
     });
 
     // Site/range changes refetch and redraw the panels (panels only when
-    // visible). Max/Min just re-renders — the data's already loaded.
+    // visible). The per-card Max/Min buttons re-render without refetching.
     sel.addEventListener('change', () => { refresh(); drawCharts(); });
     range.addEventListener('change', () => { refresh(); drawCharts(); });
-    agg.addEventListener('change', render);
 
     function tick() { refresh(); renderSites(); }
     loadSites().then(tick).catch((e) => fail(e.message));
