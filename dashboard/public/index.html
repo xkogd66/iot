@@ -99,6 +99,10 @@
       font-variant-numeric: tabular-nums; margin-top: .4rem;
     }
     .card .unit { font-size: .95rem; font-weight: 500; color: var(--ink-2); margin-left: .1rem; }
+    .card .stamp {
+      margin-top: .5rem; font-size: .72rem; color: var(--ink-2);
+      font-variant-numeric: tabular-nums; min-height: 1em;
+    }
 
     .note { margin-top: 1.25rem; font-size: .78rem; color: var(--ink-2); }
     .note.error { color: var(--down); }
@@ -133,7 +137,7 @@
 <body>
   <header>
     <h1>Ekskog Estate Monitoring</h1>
-    <p>1-hour averages, live from InfluxDB</p>
+    <p>Max &amp; min per sensor, live from InfluxDB</p>
   </header>
 
   <div class="sites" id="sites"></div>
@@ -142,11 +146,17 @@
     <label class="field">Site
       <select id="site"></select>
     </label>
+    <label class="field">Show
+      <select id="agg">
+        <option value="max">Maximum</option>
+        <option value="min">Minimum</option>
+      </select>
+    </label>
     <label class="field">Range
       <select id="range">
-        <option value="now-6h">last 6h</option>
-        <option value="now-24h">last 24h</option>
-        <option value="now-7d">last 7 days</option>
+        <option value="6h">last 6h</option>
+        <option value="24h">last 24h</option>
+        <option value="7d">last 7 days</option>
       </select>
     </label>
   </div>
@@ -155,14 +165,17 @@
     <div class="card">
       <div class="label">Temperature</div>
       <div class="value"><span id="temp">–</span><span class="unit">°C</span></div>
+      <div class="stamp" id="temp-t"></div>
     </div>
     <div class="card">
       <div class="label">Humidity</div>
       <div class="value"><span id="humidity">–</span><span class="unit">%</span></div>
+      <div class="stamp" id="humidity-t"></div>
     </div>
     <div class="card">
       <div class="label">Pressure</div>
       <div class="value"><span id="pressure">–</span><span class="unit">hPa</span></div>
+      <div class="stamp" id="pressure-t"></div>
     </div>
   </div>
 
@@ -180,8 +193,10 @@
     const $ = (id) => document.getElementById(id);
     const sel = $('site');
     const range = $('range');
+    const agg = $('agg');
     const charts = $('charts');
     const toggle = $('toggle-charts');
+    let lastSummary = null;
 
     // Grafana renders the charts; this page is the front door. Panel ids come
     // from grafana/configmap.yaml — keep them in sync.
@@ -241,7 +256,7 @@
           orgId: '1',
           panelId: String(panelId),
           'var-site': sel.value,
-          from: range.value,
+          from: `now-${range.value}`,
           to: 'now',
           theme: dark ? 'dark' : 'light',
         });
@@ -255,26 +270,48 @@
     }
 
     async function loadSites() {
-      const r = await fetch('/api/sites');
-      const { sites, error } = await r.json();
+      const r = await fetch('/api/status');
+      const { statuses, error } = await r.json();
       if (error) throw new Error(error);
-      if (!sites.length) throw new Error('no sites reporting');
-      sel.innerHTML = sites.map((s) => `<option>${s}</option>`).join('');
+      if (!statuses.length) throw new Error('no sites reporting');
+      sel.innerHTML = statuses.map(({ site }) => `<option>${site}</option>`).join('');
+    }
+
+    function fmtTime(iso) {
+      return new Date(iso).toLocaleString([], {
+        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+      });
+    }
+
+    // Draw from the stored summary — both max and min came in one fetch, so the
+    // Max/Min selector just re-renders without hitting the server.
+    function render() {
+      if (!lastSummary) return;
+      const which = agg.value;
+      let any = false;
+      for (const f of ['temp', 'humidity', 'pressure']) {
+        const e = lastSummary.extremes[f]?.[which];
+        $(f).textContent = e ? e.value : '–';
+        $(`${f}-t`).textContent = e ? fmtTime(e.time) : '';
+        if (e) any = true;
+      }
+      const rangeLabel = range.options[range.selectedIndex].text;
+      $('note').className = 'note';
+      $('note').textContent = any
+        ? `${which === 'max' ? 'Max' : 'Min'} over ${rangeLabel} · updated ${new Date().toLocaleTimeString()}`
+        : 'No data in the selected range.';
     }
 
     async function refresh() {
       if (!sel.value) return;
       try {
-        const r = await fetch(`/api/summary?site=${encodeURIComponent(sel.value)}`);
+        const r = await fetch(
+          `/api/summary?site=${encodeURIComponent(sel.value)}&range=${encodeURIComponent(range.value)}`,
+        );
         const d = await r.json();
         if (d.error) throw new Error(d.error);
-        for (const f of ['temp', 'humidity', 'pressure']) {
-          $(f).textContent = d.averages[f] ?? '–';
-        }
-        $('note').className = 'note';
-        $('note').textContent = Object.keys(d.averages).length
-          ? 'Updated ' + new Date().toLocaleTimeString()
-          : 'No data in the last hour.';
+        lastSummary = d;
+        render();
       } catch (e) {
         fail(e.message);
       }
@@ -292,9 +329,11 @@
       else drawCharts();
     });
 
-    // Site/range changes redraw the panels only when they're already visible.
+    // Site/range changes refetch and redraw the panels (panels only when
+    // visible). Max/Min just re-renders — the data's already loaded.
     sel.addEventListener('change', () => { refresh(); drawCharts(); });
-    range.addEventListener('change', drawCharts);
+    range.addEventListener('change', () => { refresh(); drawCharts(); });
+    agg.addEventListener('change', render);
 
     function tick() { refresh(); renderSites(); }
     loadSites().then(tick).catch((e) => fail(e.message));

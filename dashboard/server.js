@@ -1,4 +1,4 @@
-// Telemetry dashboard: 1-hour averages per site.
+// Telemetry dashboard: per-site max/min for each sensor over a chosen window.
 // Queries InfluxDB server-side so the token never reaches the browser.
 const http = require('node:http');
 const fs = require('node:fs');
@@ -15,6 +15,9 @@ for (const [k, v] of Object.entries({ INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFL
 const PORT = process.env.PORT || 8080;
 const FIELDS = ['temp', 'humidity', 'pressure'];
 const SITE_RE = /^[A-Za-z0-9_-]+$/;
+// Allowlist: the ?range token maps to a Flux relative start. Nothing else
+// reaches the query, so range can't be injected.
+const RANGES = { '6h': '-6h', '24h': '-24h', '7d': '-7d' };
 const INDEX = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
 
 // Flux returns annotated CSV: '#' metadata lines, then a header, then rows.
@@ -64,42 +67,32 @@ async function listSites() {
   return [...new Set(rows.map((r) => r._value).filter(Boolean))].sort();
 }
 
-async function siteAverages(site) {
-  // `site` is validated against listSites() before reaching here, so it cannot
-  // break out of the string literal below.
+// Max and min of each field over the window, each with the timestamp it
+// occurred. Flux max()/min() select the whole extreme row, so _time comes free.
+// `site` is validated against listSites() and `rangeFlux` against RANGES before
+// reaching here, so neither can break out of the string literals below.
+async function siteExtremes(site, rangeFlux) {
   const fieldFilter = FIELDS.map((f) => `r._field == "${f}"`).join(' or ');
-  const rows = await flux(
+  const query = (agg) =>
     `from(bucket: "${INFLUX_BUCKET}")\n` +
-      `  |> range(start: -1h)\n` +
-      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
-      `  |> filter(fn: (r) => r.site == "${site}")\n` +
-      `  |> filter(fn: (r) => ${fieldFilter})\n` +
-      `  |> group(columns: ["_field"])\n` +
-      `  |> mean()`,
-  );
-  const out = {};
-  for (const r of rows) {
-    if (FIELDS.includes(r._field) && r._value) {
-      out[r._field] = Math.round(parseFloat(r._value) * 10) / 10;
+    `  |> range(start: ${rangeFlux})\n` +
+    `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
+    `  |> filter(fn: (r) => r.site == "${site}")\n` +
+    `  |> filter(fn: (r) => ${fieldFilter})\n` +
+    `  |> group(columns: ["_field"])\n` +
+    `  |> ${agg}()`;
+  const [maxRows, minRows] = await Promise.all([flux(query('max')), flux(query('min'))]);
+  const out = Object.fromEntries(FIELDS.map((f) => [f, { max: null, min: null }]));
+  const fill = (rows, key) => {
+    for (const r of rows) {
+      if (FIELDS.includes(r._field) && r._value) {
+        out[r._field][key] = { value: Math.round(parseFloat(r._value) * 10) / 10, time: r._time };
+      }
     }
-  }
+  };
+  fill(maxRows, 'max');
+  fill(minRows, 'min');
   return out;
-}
-
-// Timestamp of the site's most recent point, or null if it hasn't reported in
-// the last day. The dashboard turns this into an up/down indicator: a board
-// that's been unplugged simply stops writing, so a stale newest point is "down".
-async function siteLastSeen(site) {
-  const rows = await flux(
-    `from(bucket: "${INFLUX_BUCKET}")\n` +
-      `  |> range(start: -24h)\n` +
-      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
-      `  |> filter(fn: (r) => r.site == "${site}")\n` +
-      `  |> group()\n` +
-      `  |> last()`,
-  );
-  const times = rows.map((r) => r._time).filter(Boolean).sort();
-  return times.at(-1) ?? null;
 }
 
 // Last-seen timestamp per site in one query (grouped by site), for the status
@@ -135,20 +128,21 @@ const server = http.createServer(async (req, res) => {
       send(res, 200, INDEX, 'text/html; charset=utf-8');
     } else if (url.pathname === '/healthz') {
       send(res, 200, 'ok', 'text/plain');
-    } else if (url.pathname === '/api/sites') {
-      json(res, 200, { sites: await listSites() });
     } else if (url.pathname === '/api/status') {
       const [known, lastSeen] = await Promise.all([listSites(), allSitesLastSeen()]);
       const statuses = known.map((s) => ({ site: s, lastSeen: lastSeen[s] ?? null }));
       json(res, 200, { statuses });
     } else if (url.pathname === '/api/summary') {
       const site = url.searchParams.get('site') || '';
+      const rangeKey = url.searchParams.get('range') || '24h';
+      const rangeFlux = RANGES[rangeKey];
+      if (!rangeFlux) return json(res, 400, { error: 'unknown range' });
       const known = await listSites();
       if (!SITE_RE.test(site) || !known.includes(site)) {
         return json(res, 400, { error: 'unknown site' });
       }
-      const [averages, lastSeen] = await Promise.all([siteAverages(site), siteLastSeen(site)]);
-      json(res, 200, { site, window: '1h', averages, lastSeen });
+      const extremes = await siteExtremes(site, rangeFlux);
+      json(res, 200, { site, range: rangeKey, extremes });
     } else {
       json(res, 404, { error: 'not found' });
     }
