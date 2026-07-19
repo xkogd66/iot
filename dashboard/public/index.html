@@ -290,7 +290,7 @@
       const which = agg.value;
       let any = false;
       for (const f of ['temp', 'humidity', 'pressure']) {
-        const e = lastSummary.extremes[f]?.[which];
+        const e = lastSummary.extremes?.[f]?.[which];
         $(f).textContent = e ? e.value : '–';
         $(`${f}-t`).textContent = e ? fmtTime(e.time) : '';
         if (e) any = true;
