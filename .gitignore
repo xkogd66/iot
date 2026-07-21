@@ -5,9 +5,10 @@ firmware/.pio/
 # macOS
 .DS_Store
 
-# Secrets (Wi-Fi credentials) — keep out of the repo
+# Secrets (Wi-Fi credentials) — keep out of the repo. telemetry/ no longer
+# uses a compile-time secrets.h (see firmware/telemetry/device_config.h); this
+# only still applies to the unmaintained PlatformIO tree in firmware/src/.
 firmware/src/secrets.h
-firmware/telemetry/secrets.h
 
 # k8s secrets: only SealedSecrets (*.sealed.yaml) are safe to commit. Plaintext
 # Secret sources must never land in git — seal them, then delete the source.

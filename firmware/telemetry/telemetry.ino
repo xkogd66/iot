@@ -1,6 +1,12 @@
-// MXChip AZ3166 home telemetry — Milestone 2
+// MXChip AZ3166 home telemetry — Milestone 3
 // Read sensors, connect Wi-Fi, publish JSON telemetry over MQTT to Mosquitto.
-// Topic: sensors/<SITE>/<ROOM>  Payload: {"temp":..,"humidity":..,"pressure":..,"rssi":..}
+// Topic: sensors/<site>/<room>  Payload: {"temp":..,"humidity":..,"pressure":..,"rssi":..}
+//
+// Device identity (Wi-Fi, MQTT broker, site/room) is no longer compiled in —
+// it's provisioned over a SoftAP + web form (see config_portal.h) and
+// persisted on the STSAFE-A100 secure element (see device_config.h). A board
+// with no saved config, or one booted with USER_BUTTON_B held, enters that
+// setup portal instead of the normal publish loop below.
 //
 // Build with arduino-cli (GCC 5.4) — see firmware/README.md. The AZ3166's Wi-Fi
 // stack requires the matching bootloader flashed to 0x08000000 (once per board);
@@ -12,7 +18,8 @@
 #include "AZ3166WiFi.h"
 #include "MQTTNetwork.h"
 #include "MQTTClient.h"
-#include "secrets.h"
+#include "device_config.h"
+#include "config_portal.h"
 
 static DevI2C *i2c = NULL;
 static HTS221Sensor *tempHumSensor = NULL;
@@ -21,7 +28,9 @@ static LPS22HBSensor *pressureSensor = NULL;
 static MQTTNetwork *mqttNetwork = NULL;
 static MQTT::Client<MQTTNetwork, Countdown, 256> *mqttClient = NULL;
 
-static const char *MQTT_TOPIC = "sensors/" SITE "/" ROOM;
+static DeviceConfig config;
+static char mqttTopic[64];
+static char mqttClientId[80];
 static const int PUBLISH_INTERVAL_MS = 10000;  // 10s
 
 static void oledStatus(const char *l0, const char *l1, const char *l2)
@@ -34,9 +43,9 @@ static void oledStatus(const char *l0, const char *l1, const char *l2)
 
 static bool connectWiFi()
 {
-    Serial.printf("Connecting to Wi-Fi SSID '%s'...\r\n", WIFI_SSID);
-    oledStatus("IoT Telemetry", "WiFi connecting", WIFI_SSID);
-    if (WiFi.begin(WIFI_SSID, WIFI_PASSWORD) != WL_CONNECTED)
+    Serial.printf("Connecting to Wi-Fi SSID '%s'...\r\n", config.wifiSsid);
+    oledStatus("IoT Telemetry", "WiFi connecting", config.wifiSsid);
+    if (WiFi.begin(config.wifiSsid, config.wifiPassword) != WL_CONNECTED)
     {
         Serial.println("Wi-Fi connect FAILED");
         oledStatus("IoT Telemetry", "WiFi FAILED", NULL);
@@ -51,14 +60,14 @@ static bool connectWiFi()
 
 static bool connectMQTT()
 {
-    Serial.printf("Connecting to MQTT %s:%d ...\r\n", MQTT_BROKER_HOST, MQTT_BROKER_PORT);
-    oledStatus("IoT Telemetry", "MQTT connecting", MQTT_BROKER_HOST);
+    Serial.printf("Connecting to MQTT %s:%d ...\r\n", config.mqttHost, config.mqttPort);
+    oledStatus("IoT Telemetry", "MQTT connecting", config.mqttHost);
 
     if (mqttClient != NULL) { delete mqttClient; mqttClient = NULL; }
     if (mqttNetwork != NULL) { delete mqttNetwork; mqttNetwork = NULL; }
 
     mqttNetwork = new MQTTNetwork();
-    int rc = mqttNetwork->connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT);
+    int rc = mqttNetwork->connect(config.mqttHost, config.mqttPort);
     if (rc != 0)
     {
         Serial.printf("TCP connect failed: %d\r\n", rc);
@@ -69,7 +78,7 @@ static bool connectMQTT()
     mqttClient = new MQTT::Client<MQTTNetwork, Countdown, 256>(*mqttNetwork);
     MQTTPacket_connectData options = MQTTPacket_connectData_initializer;
     options.MQTTVersion = 4;  // 3.1.1
-    options.clientID.cstring = (char *)MQTT_CLIENT_ID;
+    options.clientID.cstring = mqttClientId;
     options.keepAliveInterval = 60;
     options.cleansession = 1;
 
@@ -80,7 +89,7 @@ static bool connectMQTT()
         oledStatus("IoT Telemetry", "MQTT CONN fail", NULL);
         return false;
     }
-    Serial.printf("MQTT connected. Publishing to %s\r\n", MQTT_TOPIC);
+    Serial.printf("MQTT connected. Publishing to %s\r\n", mqttTopic);
     return true;
 }
 
@@ -104,12 +113,34 @@ void setup()
     pressureSensor = new LPS22HBSensor(*i2c);
     pressureSensor->init(NULL);
 
-    connectWiFi();
-    connectMQTT();
+    bool hasConfig = loadDeviceConfig(config);
+
+    pinMode(USER_BUTTON_B, INPUT);
+    bool buttonHeld = digitalRead(USER_BUTTON_B) == LOW;
+
+    if (!hasConfig || buttonHeld)
+    {
+        runConfigPortal(config);  // never returns — saves + reboots, or times out + reboots
+    }
+
+    snprintf(mqttTopic, sizeof(mqttTopic), "sensors/%s/%s", config.site, config.room);
+    buildClientId(config.site, config.room, mqttClientId, sizeof(mqttClientId));
+
+    // Connecting happens in loop()'s ensureConnected() on the first iteration,
+    // not here — that's what lets the Button B check there interrupt even the
+    // very first connect attempt, not just later retries.
 }
 
 void loop()
 {
+    // Checked every iteration (not just at boot) so Button B can break out of
+    // a stuck connect-retry loop too — e.g. a misspelled Wi-Fi password that
+    // would otherwise retry forever with no other way back into setup mode.
+    if (digitalRead(USER_BUTTON_B) == LOW)
+    {
+        runConfigPortal(config); // never returns
+    }
+
     if (!ensureConnected())
     {
         delay(3000);
@@ -127,7 +158,7 @@ void loop()
                        "{\"temp\":%.1f,\"humidity\":%.1f,\"pressure\":%.1f,\"rssi\":%d}",
                        temperature, humidity, pressure, rssi);
 
-    int rc = mqttClient->publish(MQTT_TOPIC, payload, len, MQTT::QOS0);
+    int rc = mqttClient->publish(mqttTopic, payload, len, MQTT::QOS0);
 
     char l1[24], l2[24];
     snprintf(l1, sizeof(l1), "T%.1f H%.0f", temperature, humidity);
@@ -136,7 +167,7 @@ void loop()
     oledStatus("IoT Telemetry", l1, l2);
 
     if (rc == 0)
-        Serial.printf("published: %s %s\r\n", MQTT_TOPIC, payload);
+        Serial.printf("published: %s %s\r\n", mqttTopic, payload);
     else
         Serial.printf("publish failed: %d\r\n", rc);
 

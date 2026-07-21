@@ -11,11 +11,6 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 SKETCH="${1:-$HERE/telemetry}"
 FQBN="AZ3166:stm32f4:MXCHIP_AZ3166"
 
-if [ ! -f "$SKETCH/secrets.h" ]; then
-    echo "Missing $SKETCH/secrets.h — copy secrets.h.example and fill in your Wi-Fi." >&2
-    exit 1
-fi
-
 arduino-cli compile --fqbn "$FQBN" "$SKETCH" --output-dir "$SKETCH/build"
 echo
 echo "Built: $SKETCH/build/$(basename "$SKETCH").ino.bin"

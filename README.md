@@ -85,17 +85,22 @@ Two gotchas worth knowing before touching a board:
 - **The bootloader must match SDK 2.0.0**, or Wi-Fi crashes at boot (blank OLED, solid-red
   RGB). Run `./flash-bootloader.sh` **once per physical board** — no upload recipe writes
   it. Sensor-only firmware works without it.
-- **Identity is compiled in.** `SITE`, `ROOM`, and `MQTT_CLIENT_ID` come from
-  `telemetry/secrets.h`, so the file always reflects *the last board you flashed*. Two
-  boards sharing an `MQTT_CLIENT_ID` will repeatedly kick each other off the broker.
+- **Identity is provisioned, not compiled in.** Every board runs the same binary; Wi-Fi,
+  MQTT broker, and site/room are set through an on-device Wi-Fi setup portal and persisted
+  on the board's secure element, not `secrets.h`. See `firmware/README.md`.
 
 ```sh
 cd firmware
-cp telemetry/secrets.h.example telemetry/secrets.h   # Wi-Fi, broker, SITE/ROOM/client id
-./flash-bootloader.sh                                # once per new board
+./flash-bootloader.sh   # once per new board
 ./build.sh
 ./flash.sh telemetry/build/telemetry.ino.bin
 ```
+
+A freshly flashed (or never-configured) board boots straight into **setup mode**: it opens
+the Wi-Fi network `AZ3166-setup`, and its OLED shows the IP to browse to for the config
+form (Wi-Fi SSID/password, MQTT host/port, site, room). Submitting it saves the config and
+reboots into normal telemetry mode. Hold **Button B** through a reset to re-enter setup on
+an already-configured board.
 
 Flash with **only the target board connected** — `flash.sh` drives OpenOCD without a probe
 serial, so with two boards attached it will grab whichever ST-Link enumerates first.
