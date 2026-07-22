@@ -1,6 +1,7 @@
 // Telemetry dashboard: per-site max/min for each sensor over a chosen window.
 // Queries InfluxDB server-side so the token never reaches the browser.
 const http = require('node:http');
+const net = require('node:net');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -148,9 +149,15 @@ async function proxyGrafana(req, res) {
   const headers = Object.fromEntries(
     Object.entries(req.headers).filter(([k]) => !HOP_BY_HOP.has(k.toLowerCase())),
   );
+  const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
   const upstream = await fetch(`${GRAFANA_URL}${req.url}`, {
     method: req.method,
     headers,
+    // /api/ds/query is a POST carrying the actual query in its body — without
+    // forwarding it, Grafana gets an empty request and every panel shows
+    // "No data". duplex: 'half' is required whenever body is a stream.
+    body: hasBody ? req : undefined,
+    duplex: hasBody ? 'half' : undefined,
     signal: AbortSignal.timeout(15000),
   });
   const resHeaders = Object.fromEntries(
@@ -203,6 +210,23 @@ const server = http.createServer(async (req, res) => {
     console.error(e.message);
     json(res, 502, { error: e.message });
   }
+});
+
+// Grafana Live (the dashboard's realtime channel, e.g. /grafana/api/live/ws)
+// negotiates over a WebSocket, which is a raw TCP upgrade rather than a normal
+// request/response — fetch() can't proxy it, so pipe the socket directly.
+server.on('upgrade', (req, clientSocket, head) => {
+  if (!req.url.startsWith('/grafana/')) return clientSocket.destroy();
+  const { hostname, port } = new URL(GRAFANA_URL);
+  const upstream = net.connect(Number(port) || 80, hostname, () => {
+    const headerLines = Object.entries(req.headers).map(([k, v]) => `${k}: ${v}`);
+    upstream.write(`${req.method} ${req.url} HTTP/1.1\r\n${headerLines.join('\r\n')}\r\n\r\n`);
+    upstream.write(head);
+    clientSocket.pipe(upstream);
+    upstream.pipe(clientSocket);
+  });
+  upstream.on('error', () => clientSocket.destroy());
+  clientSocket.on('error', () => upstream.destroy());
 });
 
 server.listen(PORT, () => console.log(`dashboard listening on :${PORT}`));
