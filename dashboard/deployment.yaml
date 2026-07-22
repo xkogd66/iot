@@ -24,6 +24,8 @@ spec:
         env:
         - name: INFLUX_URL
           value: http://influxdb.iot.svc.cluster.local:8086
+        - name: GRAFANA_URL
+          value: http://grafana.iot.svc.cluster.local
         - name: INFLUX_TOKEN
           valueFrom:
             secretKeyRef:

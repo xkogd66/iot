@@ -33,8 +33,13 @@ spec:
           name: http
         env:
         # grafana.ini settings via GF_ overrides.
+        # Served through the dashboard app's /grafana/ proxy (see
+        # dashboard/server.js) so the browser never talks to this pod
+        # directly — that's what makes the charts work off the home LAN.
         - name: GF_SERVER_ROOT_URL
-          value: http://192.168.1.218
+          value: https://home.ekskog.me/grafana/
+        - name: GF_SERVER_SERVE_FROM_SUB_PATH
+          value: "true"
         # Required for /d-solo/ iframes: without it Grafana sends
         # X-Frame-Options: deny and the embed is refused.
         - name: GF_SECURITY_ALLOW_EMBEDDING

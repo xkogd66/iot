@@ -246,8 +246,10 @@
     let lastSummary = null;
 
     // Grafana renders the charts; this page is the front door. Panel ids come
-    // from grafana/configmap.yaml — keep them in sync.
-    const GRAFANA = 'http://192.168.1.218';
+    // from grafana/configmap.yaml — keep them in sync. Requests go through
+    // this server's /grafana/ proxy (server.js) so the iframe is same-origin
+    // regardless of where the browser is — no LAN-only IP, no mixed content.
+    const GRAFANA = '/grafana';
     const PANELS = { temp: 1, humidity: 2, pressure: 3 };
 
     // A board that's up publishes every ~minute; allow a few missed sends before
@@ -298,7 +300,7 @@
       if (charts.hidden || !sel.value) return;
       const dark = matchMedia('(prefers-color-scheme: dark)').matches;
       for (const [field, panelId] of Object.entries(PANELS)) {
-        const url = new URL(`${GRAFANA}/d-solo/iot-telemetry/telemetry`);
+        const url = new URL(`${GRAFANA}/d-solo/iot-telemetry/telemetry`, location.origin);
         url.search = new URLSearchParams({
           orgId: '1',
           panelId: String(panelId),

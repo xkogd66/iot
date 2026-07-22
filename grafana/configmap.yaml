@@ -2,9 +2,10 @@
 #   grafana-datasources        -> /etc/grafana/provisioning/datasources
 #   grafana-dashboard-provider -> /etc/grafana/provisioning/dashboards
 #   grafana-dashboard-telemetry-> /var/lib/grafana/dashboards/iot
-# Grafana here is a rendering engine: the dashboard app at 192.168.1.217 embeds
-# individual panels via /d-solo/ iframes, which is why the Deployment turns on
-# anonymous viewing and embedding.
+# Grafana here is a rendering engine: the dashboard app embeds individual
+# panels via /d-solo/ iframes proxied through its own /grafana/ path (see
+# dashboard/server.js), which is why the Deployment turns on anonymous
+# viewing and embedding.
 apiVersion: v1
 kind: ConfigMap
 metadata:

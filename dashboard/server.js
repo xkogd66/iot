@@ -4,8 +4,8 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET } = process.env;
-for (const [k, v] of Object.entries({ INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET })) {
+const { INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET, GRAFANA_URL } = process.env;
+for (const [k, v] of Object.entries({ INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET, GRAFANA_URL })) {
   if (!v) {
     console.error(`missing required env var ${k}`);
     process.exit(1);
@@ -136,6 +136,32 @@ async function allSitesLastSeen() {
   return out;
 }
 
+// Grafana lives on the cluster-internal network only. This proxies /grafana/*
+// to it so the browser talks to this server's own origin — same trick as the
+// Influx queries above, and it's what makes the charts work off the home LAN
+// and avoids mixed-content (this server is the thing serving HTTPS).
+const HOP_BY_HOP = new Set([
+  'connection', 'keep-alive', 'transfer-encoding', 'upgrade', 'host', 'content-length',
+]);
+
+async function proxyGrafana(req, res) {
+  const headers = Object.fromEntries(
+    Object.entries(req.headers).filter(([k]) => !HOP_BY_HOP.has(k.toLowerCase())),
+  );
+  const upstream = await fetch(`${GRAFANA_URL}${req.url}`, {
+    method: req.method,
+    headers,
+    signal: AbortSignal.timeout(15000),
+  });
+  const resHeaders = Object.fromEntries(
+    [...upstream.headers].filter(([k]) => !HOP_BY_HOP.has(k.toLowerCase()) && k.toLowerCase() !== 'content-encoding'),
+  );
+  res.writeHead(upstream.status, resHeaders);
+  if (!upstream.body) return res.end();
+  for await (const chunk of upstream.body) res.write(chunk);
+  res.end();
+}
+
 function send(res, code, body, type) {
   res.writeHead(code, { 'Content-Type': type, 'Content-Length': Buffer.byteLength(body) });
   res.end(body);
@@ -150,6 +176,8 @@ const server = http.createServer(async (req, res) => {
       send(res, 200, INDEX, 'text/html; charset=utf-8');
     } else if (url.pathname === '/healthz') {
       send(res, 200, 'ok', 'text/plain');
+    } else if (url.pathname.startsWith('/grafana/')) {
+      await proxyGrafana(req, res);
     } else if (url.pathname === '/api/status') {
       const [known, lastSeen] = await Promise.all([listSites(), allSitesLastSeen()]);
       const statuses = known.map((s) => ({ site: s, lastSeen: lastSeen[s] ?? null }));
