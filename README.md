@@ -136,6 +136,7 @@ All in namespace `iot`. MetalLB assigns the LoadBalancer IPs.
 | InfluxDB 2.7 | `influxdb/` | `192.168.1.216:8086` | NFS PV, 10Gi RWX |
 | Telegraf | `telegraf/` | — | config in a ConfigMap |
 | Dashboard | `dashboard/` | `192.168.1.217:80` | image built by CI |
+| Grafana | `grafana/` | `192.168.1.218:80` | renders charts, proxied through the dashboard at `/grafana/` |
 
 Credentials for InfluxDB live in the `influxdb-auth` secret; Telegraf and the dashboard
 both read org, bucket, and token from it via `secretKeyRef` rather than duplicating them.
@@ -194,6 +195,9 @@ base64). The kubeconfig's `server:` must be an address a GitHub-hosted runner ca
 New GHCR packages default to **private**, which fails the pull with a misleading
 `not found`. Nothing in this cluster uses an `imagePullSecret`, so make the package public
 under Packages → Package settings.
+
+`.github/workflows/grafana.yml` fires on pushes touching `grafana/**` and applies
+`kubectl apply -f grafana/` — no image to build, Grafana runs the stock upstream image.
 
 Everything else (`mqtt/`, `influxdb/`, `telegraf/`) is applied by hand:
 

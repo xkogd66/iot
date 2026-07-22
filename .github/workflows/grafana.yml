@@ -1,0 +1,45 @@
+name: Deploy grafana
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'grafana/**'
+      - '.github/workflows/grafana.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up KUBECONFIG
+        run: |
+          printf '%s' "${{ secrets.KUBECONFIG_FILE_CONTENT }}" > kubeconfig.yaml
+          echo "KUBECONFIG=$PWD/kubeconfig.yaml" >> $GITHUB_ENV
+
+      - name: Kubeconfig sanity check
+        run: |
+          if [ ! -s kubeconfig.yaml ]; then echo "kubeconfig missing or empty" >&2; exit 1; fi
+          SERVER=$(kubectl config view --raw -o jsonpath="{.clusters[0].cluster.server}" 2>/dev/null || true)
+          echo "Cluster server: $SERVER"
+          if [ -z "$SERVER" ]; then echo "unable to read server from kubeconfig" >&2; exit 1; fi
+          if [[ "$SERVER" == *localhost* ]]; then echo "kubeconfig points to localhost; the runner cannot reach it" >&2; exit 1; fi
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f grafana/
+          kubectl rollout status deployment/grafana --namespace=iot --timeout=300s
+
+      - name: Debug on failure
+        if: failure()
+        run: |
+          echo "Deployment failed. Gathering debug information..."
+          kubectl describe deployment grafana --namespace=iot
+          kubectl describe pods -l app=grafana --namespace=iot
+          kubectl logs -l app=grafana --namespace=iot --tail=50
