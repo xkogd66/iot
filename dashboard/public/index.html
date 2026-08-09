@@ -228,6 +228,7 @@
   </div>
 
   <p class="note" id="note">Loading…</p>
+  <p class="note error" id="err" hidden></p>
 
   <button id="toggle-charts" class="toggle" type="button">Show charts</button>
 
@@ -280,14 +281,27 @@
         const r = await fetch('/api/status');
         const { statuses, error } = await r.json();
         if (error) throw new Error(error);
-        $('sites').innerHTML = statuses
-          .map(({ site, lastSeen }) => {
+        // Built as DOM, not an HTML string: site names come from MQTT topics on
+        // a public anonymous broker, so interpolating them into markup would let
+        // anyone who can publish inject script into this page.
+        $('sites').replaceChildren(
+          ...statuses.map(({ site, lastSeen }) => {
             const { up, meta } = pillMeta(lastSeen);
-            return `<span class="pill ${up ? 'up' : 'down'}">` +
-              `<span class="site">${site}</span>` +
-              `<span class="meta">${meta}</span></span>`;
-          })
-          .join('');
+            const pill = document.createElement('span');
+            pill.className = `pill ${up ? 'up' : 'down'}`;
+
+            const name = document.createElement('span');
+            name.className = 'site';
+            name.textContent = site;
+
+            const info = document.createElement('span');
+            info.className = 'meta';
+            info.textContent = meta;
+
+            pill.append(name, info);
+            return pill;
+          }),
+        );
       } catch (e) {
         /* keep the last-rendered pills on a transient fetch error */
       }
@@ -313,9 +327,27 @@
       }
     }
 
+    // Errors get their own line: overwriting the "Updated" note used to hide how
+    // old the numbers on screen were, exactly when that mattered most.
     function fail(message) {
-      $('note').className = 'note error';
-      $('note').textContent = message;
+      $('err').textContent = message;
+      $('err').hidden = false;
+    }
+
+    function clearError() {
+      $('err').hidden = true;
+      $('err').textContent = '';
+    }
+
+    // Wipe the readings. Without this a failed fetch left the PREVIOUS site's
+    // values on screen under the newly selected site's name.
+    function blankReadings() {
+      for (const f of ['temp', 'humidity', 'pressure']) $(f).textContent = '–';
+      for (const card of document.querySelectorAll('.card.ext')) {
+        card.querySelector('.v').textContent = '–';
+        card.querySelector('.stamp').textContent = '';
+      }
+      $('note').textContent = 'No data';
     }
 
     async function loadSites() {
@@ -323,7 +355,10 @@
       const { statuses, error } = await r.json();
       if (error) throw new Error(error);
       if (!statuses.length) throw new Error('no sites reporting');
-      sel.innerHTML = statuses.map(({ site }) => `<option>${site}</option>`).join('');
+      // new Option() sets textContent, not HTML. Site names come from MQTT
+      // topics on a public anonymous broker, so anyone who can publish could
+      // otherwise inject markup here.
+      sel.replaceChildren(...statuses.map(({ site }) => new Option(site)));
     }
 
     function fmtTime(iso) {
@@ -347,7 +382,6 @@
         card.querySelector('.v').textContent = e ? e.value : '–';
         card.querySelector('.stamp').textContent = e ? fmtTime(e.time) : 'no data';
       }
-      $('note').className = 'note';
       $('note').textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
 
@@ -372,8 +406,13 @@
         const d = await r.json();
         if (d.error) throw new Error(d.error);
         lastSummary = d;
+        clearError();
         render();
       } catch (e) {
+        // Drop the stale summary too — showing one site's numbers under
+        // another site's name is worse than showing nothing.
+        lastSummary = null;
+        blankReadings();
         fail(e.message);
       }
     }

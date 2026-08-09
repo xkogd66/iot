@@ -15,7 +15,12 @@ for (const [k, v] of Object.entries({ INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFL
 
 const PORT = process.env.PORT || 8080;
 const FIELDS = ['temp', 'humidity', 'pressure'];
-const SITE_RE = /^[A-Za-z0-9_-]+$/;
+// Site names come from MQTT topic parsing (sensors/<site>/<room>), so they can
+// contain dots — "poble.sec" is a real site. Quotes and backslashes stay
+// excluded because `site` is interpolated into a Flux string literal; the
+// membership check against listSites() below is the primary guard, this is
+// defence in depth.
+const SITE_RE = /^[A-Za-z0-9._-]+$/;
 // Allowlist: the ?range token maps to a Flux relative start. Nothing else
 // reaches the query, so range can't be injected.
 const RANGES = { '6h': '-6h', '24h': '-24h', '7d': '-7d' };
