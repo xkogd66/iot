@@ -58,6 +58,22 @@ function checkAdmin(req) {
   return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
 }
 
+// How many points still exist for `site`, over all time. Used to prove a delete
+// actually removed something — the Influx delete API returns 204 even when its
+// predicate matches nothing, so "success" alone means very little.
+async function sitePointCount(site) {
+  const rows = await flux(
+    `from(bucket: "${INFLUX_BUCKET}")\n` +
+      `  |> range(start: 1970-01-01T00:00:00Z)\n` +
+      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
+      `  |> filter(fn: (r) => r.site == "${site}")\n` +
+      `  |> count()\n` +
+      `  |> group()\n` +
+      `  |> sum()`,
+  );
+  return rows.reduce((n, r) => n + (parseInt(r._value, 10) || 0), 0);
+}
+
 // Delete every telemetry point for `site` in [start, stop). `site` has already
 // been checked against SITE_RE and listSites(), so it cannot escape the
 // predicate's string literal.
@@ -299,9 +315,13 @@ const server = http.createServer(async (req, res) => {
       if (url.pathname === '/api/admin/remove') {
         // Everything, for all time — the site stops existing once its last
         // point is gone, since a site is only ever a tag on its data.
+        const before = await sitePointCount(site);
         await influxDelete(site, EPOCH, new Date().toISOString());
-        console.warn(`admin: removed all data for site ${JSON.stringify(site)}`);
-        return json(res, 200, { ok: true, action: 'remove', site });
+        const remaining = await sitePointCount(site);
+        console.warn(
+          `admin: remove ${JSON.stringify(site)} — ${before} points before, ${remaining} after`,
+        );
+        return json(res, 200, { ok: true, action: 'remove', site, before, remaining });
       }
 
       if (url.pathname === '/api/admin/reset') {
@@ -309,9 +329,14 @@ const server = http.createServer(async (req, res) => {
         const ms = RANGE_MS[rangeKey];
         if (!ms) return json(res, 400, { error: 'unknown range' });
         const keptSince = new Date(Date.now() - ms).toISOString();
+        const before = await sitePointCount(site);
         await influxDelete(site, EPOCH, keptSince);
-        console.warn(`admin: reset site ${JSON.stringify(site)}, kept since ${keptSince}`);
-        return json(res, 200, { ok: true, action: 'reset', site, keptSince });
+        const remaining = await sitePointCount(site);
+        console.warn(
+          `admin: reset ${JSON.stringify(site)} kept since ${keptSince} — ` +
+            `${before} points before, ${remaining} after`,
+        );
+        return json(res, 200, { ok: true, action: 'reset', site, keptSince, before, remaining });
       }
 
       json(res, 404, { error: 'not found' });

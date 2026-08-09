@@ -556,12 +556,21 @@
         });
         const d = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(d.error || `failed (${r.status})`);
-        adminSay(
-          action === 'remove'
-            ? `Removed "${d.site}".`
-            : `Reset "${d.site}" — kept readings since ${new Date(d.keptSince).toLocaleString()}.`,
-          false,
-        );
+        // Report the actual point counts: Influx answers 204 to a delete whose
+        // predicate matched nothing, so "it worked" has to be measured.
+        const deleted = d.before - d.remaining;
+        const detail = `${deleted} of ${d.before} readings deleted, ${d.remaining} remain`;
+        if (d.remaining > 0 && action === 'remove') {
+          adminSay(`"${d.site}": ${detail} — the delete did NOT fully take.`, true);
+        } else {
+          adminSay(
+            action === 'remove'
+              ? `Removed "${d.site}" — ${detail}.`
+              : `Reset "${d.site}" — ${detail}, kept since ` +
+                `${new Date(d.keptSince).toLocaleString()}.`,
+            false,
+          );
+        }
         await tick();
         adminHint();
       } catch (e) {
