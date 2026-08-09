@@ -41,6 +41,20 @@ spec:
             secretKeyRef:
               name: influxdb-auth
               key: bucket
+        # Enables the destructive /api/admin/* routes (remove site, reset
+        # history). Optional by design: if this key is absent the server still
+        # starts and those routes return 503, so a missing secret fails closed.
+        #
+        # Deliberately NOT admin-password: that key is InfluxDB's own admin
+        # login. This dashboard is public-facing, so its admin credential must
+        # have its own blast radius — a leak here must not hand over the
+        # database.
+        - name: ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: influxdb-auth
+              key: dashboard-admin-password
+              optional: true
         livenessProbe:
           httpGet:
             path: /healthz

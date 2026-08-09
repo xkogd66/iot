@@ -124,6 +124,24 @@
       font-variant-numeric: tabular-nums; margin-top: .4rem;
     }
     .card .unit { font-size: .95rem; font-weight: 500; color: var(--ink-2); margin-left: .1rem; }
+    .admin {
+      margin-top: .9rem; padding: 1rem 1.15rem; border-radius: .75rem;
+      background: var(--surface); border: 1px solid var(--down);
+    }
+    .admin-warn { margin: 0 0 .8rem; font-size: .85rem; font-weight: 600; color: var(--down); }
+    .admin-pw { display: block; font-size: .8rem; color: var(--ink-2); max-width: 20rem; }
+    .admin-pw input {
+      display: block; width: 100%; margin-top: .3rem; padding: .45rem .6rem;
+      font: inherit; border: 1px solid var(--line); border-radius: .45rem;
+      background: var(--bg); color: var(--ink);
+    }
+    .admin-actions { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .9rem; }
+    button.danger {
+      font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
+      padding: .45rem .9rem; border-radius: .45rem;
+      color: #fff; background: var(--down); border: 1px solid var(--down);
+    }
+    button.danger:disabled { opacity: .5; cursor: not-allowed; }
     .card .stamp {
       margin-top: .5rem; font-size: .72rem; color: var(--ink-2);
       font-variant-numeric: tabular-nums; min-height: 1em;
@@ -242,6 +260,23 @@
     <iframe id="chart-temp" loading="lazy" title="Temperature over time"></iframe>
     <iframe id="chart-humidity" loading="lazy" title="Humidity over time"></iframe>
     <iframe id="chart-pressure" loading="lazy" title="Pressure over time"></iframe>
+  </div>
+
+  <button id="toggle-admin" class="toggle" type="button">Admin</button>
+
+  <div class="admin" id="admin" hidden>
+    <p class="admin-warn">
+      These delete data from InfluxDB permanently. There is no undo and no backup.
+    </p>
+    <label class="admin-pw">Admin password
+      <input type="password" id="admin-pw" autocomplete="current-password">
+    </label>
+    <div class="admin-actions">
+      <button type="button" id="btn-reset" class="danger">Reset history</button>
+      <button type="button" id="btn-remove" class="danger">Remove site</button>
+    </div>
+    <p class="muted" id="admin-hint"></p>
+    <p class="note" id="admin-note"></p>
   </div>
 
   <script>
@@ -443,10 +478,88 @@
       else drawCharts();
     });
 
+    // ---- Admin. Both actions delete from InfluxDB with no undo, so each one
+    // spells out the exact site and window in the confirm dialog before it
+    // sends anything. The password is never stored — only sent per request.
+    const admin = $('admin');
+    const adminToggle = $('toggle-admin');
+
+    adminToggle.addEventListener('click', () => {
+      admin.hidden = !admin.hidden;
+      adminToggle.classList.toggle('open', !admin.hidden);
+      if (!admin.hidden) adminHint();
+    });
+
+    function adminHint() {
+      const rangeText = range.options[range.selectedIndex].text;
+      $('admin-hint').textContent =
+        `Reset history: deletes readings for "${sel.value}" older than ${rangeText}. ` +
+        `Remove site: deletes every reading "${sel.value}" has ever recorded.`;
+    }
+
+    function basicAuth(pw) {
+      // btoa() rejects anything outside Latin-1, so encode UTF-8 first.
+      return 'Basic ' + btoa(String.fromCharCode(...new TextEncoder().encode(`admin:${pw}`)));
+    }
+
+    function adminSay(message, isError) {
+      $('admin-note').className = isError ? 'note error' : 'note';
+      $('admin-note').textContent = message;
+    }
+
+    async function adminCall(action) {
+      const pw = $('admin-pw').value;
+      if (!pw) return adminSay('Enter the admin password.', true);
+      if (!sel.value) return adminSay('No site selected.', true);
+
+      // Pin the site and range BEFORE confirming, and send exactly what was
+      // confirmed. The dropdown rebuilds itself on the 30s status poll, so
+      // re-reading sel.value afterwards could delete a site the user never saw
+      // in the dialog.
+      const site = sel.value;
+      const rangeKey = range.value;
+      const rangeText = range.options[range.selectedIndex].text;
+
+      const what = action === 'remove'
+        ? `Permanently delete ALL data for "${site}"?`
+        : `Permanently delete data for "${site}" older than ${rangeText}?`;
+      if (!confirm(`${what}\n\nThis cannot be undone.`)) return;
+
+      const params = new URLSearchParams({ site });
+      if (action === 'reset') params.set('range', rangeKey);
+
+      const buttons = [...document.querySelectorAll('button.danger')];
+      for (const b of buttons) b.disabled = true;
+      adminSay('Working…', false);
+      try {
+        const r = await fetch(`/api/admin/${action}?${params}`, {
+          method: 'POST',
+          headers: { Authorization: basicAuth(pw) },
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || `failed (${r.status})`);
+        adminSay(
+          action === 'remove'
+            ? `Removed "${d.site}".`
+            : `Reset "${d.site}" — kept readings since ${new Date(d.keptSince).toLocaleString()}.`,
+          false,
+        );
+        await tick();
+        adminHint();
+      } catch (e) {
+        adminSay(e.message, true);
+      } finally {
+        for (const b of buttons) b.disabled = false;
+      }
+    }
+
+    $('btn-remove').addEventListener('click', () => adminCall('remove'));
+    $('btn-reset').addEventListener('click', () => adminCall('reset'));
+
     // Site/range changes refetch and redraw the panels (panels only when
     // visible). The per-card Max/Min buttons re-render without refetching.
-    sel.addEventListener('change', () => { refresh(); drawCharts(); });
-    range.addEventListener('change', () => { refresh(); drawCharts(); });
+    sel.addEventListener('change', () => { refresh(); drawCharts(); adminHint(); });
+    range.addEventListener('change', () => { refresh(); drawCharts(); adminHint(); });
 
     // Status first so the dropdown has options before the first summary fetch.
     async function tick() {

@@ -4,6 +4,7 @@ const http = require('node:http');
 const net = require('node:net');
 const fs = require('node:fs');
 const path = require('node:path');
+const crypto = require('node:crypto');
 
 const { INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET, GRAFANA_URL } = process.env;
 for (const [k, v] of Object.entries({ INFLUX_URL, INFLUX_TOKEN, INFLUX_ORG, INFLUX_BUCKET, GRAFANA_URL })) {
@@ -24,7 +25,60 @@ const SITE_RE = /^[A-Za-z0-9._-]+$/;
 // Allowlist: the ?range token maps to a Flux relative start. Nothing else
 // reaches the query, so range can't be injected.
 const RANGES = { '6h': '-6h', '24h': '-24h', '7d': '-7d' };
+// Same windows as milliseconds, for turning a range key into the absolute
+// cut-off timestamp the Influx delete API wants.
+const RANGE_MS = { '6h': 6 * 3600e3, '24h': 24 * 3600e3, '7d': 7 * 24 * 3600e3 };
 const INDEX = fs.readFileSync(path.join(__dirname, 'public', 'index.html'));
+
+// Admin (destructive deletes) is OPT-IN: with no ADMIN_PASSWORD set, the
+// /api/admin/* routes refuse everything. A missing secret must fail closed —
+// never silently expose data deletion. Deliberately not in the required-env
+// loop above, so the dashboard still runs read-only without it.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const EPOCH = '1970-01-01T00:00:00Z';
+
+// Failed-auth backoff, keyed by peer address. This dashboard is reachable from
+// the public internet, so an unthrottled password check is a brute-force target.
+const authFails = new Map();
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function peer(req) {
+  return req.socket.remoteAddress || 'unknown';
+}
+
+function checkAdmin(req) {
+  if (!ADMIN_PASSWORD) return false;
+  const header = req.headers.authorization || '';
+  if (!header.startsWith('Basic ')) return false;
+  const decoded = Buffer.from(header.slice(6), 'base64').toString('utf8');
+  const supplied = Buffer.from(decoded.slice(decoded.indexOf(':') + 1), 'utf8');
+  const expected = Buffer.from(ADMIN_PASSWORD, 'utf8');
+  // timingSafeEqual throws on length mismatch, so length is checked first —
+  // that leaks the password's length and nothing else.
+  return supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
+}
+
+// Delete every telemetry point for `site` in [start, stop). `site` has already
+// been checked against SITE_RE and listSites(), so it cannot escape the
+// predicate's string literal.
+async function influxDelete(site, start, stop) {
+  const url =
+    `${INFLUX_URL}/api/v2/delete` +
+    `?org=${encodeURIComponent(INFLUX_ORG)}&bucket=${encodeURIComponent(INFLUX_BUCKET)}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Token ${INFLUX_TOKEN}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      start,
+      stop,
+      predicate: `_measurement="telemetry" AND site="${site}"`,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) {
+    throw new Error(`influx delete ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }
+}
 
 // Flux returns annotated CSV: '#' metadata lines, then a header, then rows.
 // A blank line starts a new result table with its own header.
@@ -222,6 +276,45 @@ const server = http.createServer(async (req, res) => {
         siteExtremes(site, rangeFlux),
       ]);
       json(res, 200, { site, range: rangeKey, averages, extremes });
+    } else if (url.pathname.startsWith('/api/admin/')) {
+      // POST only: these delete data, and a GET would be reachable from a link
+      // or a prefetch.
+      if (req.method !== 'POST') return json(res, 405, { error: 'method not allowed' });
+      if (!ADMIN_PASSWORD) return json(res, 503, { error: 'admin disabled on this server' });
+      if (!checkAdmin(req)) {
+        const n = (authFails.get(peer(req)) || 0) + 1;
+        authFails.set(peer(req), n);
+        await sleep(Math.min(n * 500, 5000));
+        res.setHeader('WWW-Authenticate', 'Basic realm="dashboard admin"');
+        return json(res, 401, { error: 'unauthorized' });
+      }
+      authFails.delete(peer(req));
+
+      const site = url.searchParams.get('site') || '';
+      const known = await listSites();
+      if (!SITE_RE.test(site) || !known.includes(site)) {
+        return json(res, 400, { error: 'unknown site' });
+      }
+
+      if (url.pathname === '/api/admin/remove') {
+        // Everything, for all time — the site stops existing once its last
+        // point is gone, since a site is only ever a tag on its data.
+        await influxDelete(site, EPOCH, new Date().toISOString());
+        console.warn(`admin: removed all data for site ${JSON.stringify(site)}`);
+        return json(res, 200, { ok: true, action: 'remove', site });
+      }
+
+      if (url.pathname === '/api/admin/reset') {
+        const rangeKey = url.searchParams.get('range') || '';
+        const ms = RANGE_MS[rangeKey];
+        if (!ms) return json(res, 400, { error: 'unknown range' });
+        const keptSince = new Date(Date.now() - ms).toISOString();
+        await influxDelete(site, EPOCH, keptSince);
+        console.warn(`admin: reset site ${JSON.stringify(site)}, kept since ${keptSince}`);
+        return json(res, 200, { ok: true, action: 'reset', site, keptSince });
+      }
+
+      json(res, 404, { error: 'not found' });
     } else {
       json(res, 404, { error: 'not found' });
     }
