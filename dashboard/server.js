@@ -65,21 +65,35 @@ async function flux(query) {
   return parseCsv(body);
 }
 
+// The single source of truth for "a site this dashboard can serve". Both
+// /api/status (which fills the dropdown) and /api/summary's membership check
+// go through here, so the UI can never offer a site the API would reject —
+// that mismatch is exactly what made poble.sec unselectable.
 async function listSites() {
   const rows = await flux(
     `import "influxdata/influxdb/schema"\n` +
       `schema.tagValues(bucket: "${INFLUX_BUCKET}", tag: "site")`,
   );
-  return [...new Set(rows.map((r) => r._value).filter(Boolean))].sort();
+  const all = [...new Set(rows.map((r) => r._value).filter(Boolean))].sort();
+  const usable = all.filter((s) => SITE_RE.test(s));
+  for (const s of all) {
+    if (!SITE_RE.test(s)) {
+      // Loud, because the site is publishing but will be invisible in the UI.
+      console.warn(`site ignored, unsupported characters in name: ${JSON.stringify(s)}`);
+    }
+  }
+  return usable;
 }
 
-// 1-hour mean of each field. `site` is validated against listSites() before
-// reaching here, so it cannot break out of the string literal below.
-async function siteAverages(site) {
+// Mean of each field over the selected window — the same window the max/min
+// use, so changing the range selector moves every number on the page. `site` is
+// validated against listSites() and `rangeFlux` against RANGES before reaching
+// here, so neither can break out of the string literals below.
+async function siteAverages(site, rangeFlux) {
   const fieldFilter = FIELDS.map((f) => `r._field == "${f}"`).join(' or ');
   const rows = await flux(
     `from(bucket: "${INFLUX_BUCKET}")\n` +
-      `  |> range(start: -1h)\n` +
+      `  |> range(start: ${rangeFlux})\n` +
       `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
       `  |> filter(fn: (r) => r.site == "${site}")\n` +
       `  |> filter(fn: (r) => ${fieldFilter})\n` +
@@ -204,7 +218,7 @@ const server = http.createServer(async (req, res) => {
         return json(res, 400, { error: 'unknown site' });
       }
       const [averages, extremes] = await Promise.all([
-        siteAverages(site),
+        siteAverages(site, rangeFlux),
         siteExtremes(site, rangeFlux),
       ]);
       json(res, 200, { site, range: rangeKey, averages, extremes });

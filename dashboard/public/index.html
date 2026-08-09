@@ -90,9 +90,15 @@
 
     .cards {
       display: grid; gap: .9rem; margin-top: .75rem;
-      grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
     }
-    .ext-head { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    /* wrap, don't clip: "Temperature" is the longest label and can't shrink
+       below its min-content width, so without this the Max/Min control was
+       pushed past the card's right edge. */
+    .ext-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: .35rem .5rem; flex-wrap: wrap;
+    }
     .seg {
       display: inline-flex; border: 1px solid var(--line);
       border-radius: .45rem; overflow: hidden; flex: none;
@@ -174,7 +180,7 @@
     </label>
   </div>
 
-  <h2 class="section">1-hour average</h2>
+  <h2 class="section">Average <span id="avg-range" class="muted"></span></h2>
   <div class="cards">
     <div class="card">
       <div class="label">Temperature</div>
@@ -276,11 +282,12 @@
 
     // One pill per site, showing which boards are reporting. The word "offline"
     // (not just the red dot) marks the down state so it isn't color-alone.
-    async function renderSites() {
+    async function refreshStatus() {
       try {
         const r = await fetch('/api/status');
         const { statuses, error } = await r.json();
         if (error) throw new Error(error);
+        syncSites(statuses);
         // Built as DOM, not an HTML string: site names come from MQTT topics on
         // a public anonymous broker, so interpolating them into markup would let
         // anyone who can publish inject script into this page.
@@ -350,15 +357,20 @@
       $('note').textContent = 'No data';
     }
 
-    async function loadSites() {
-      const r = await fetch('/api/status');
-      const { statuses, error } = await r.json();
-      if (error) throw new Error(error);
-      if (!statuses.length) throw new Error('no sites reporting');
+    // Keep the dropdown in step with the sites actually reporting. Rebuilt only
+    // when the set changes, so it never steals focus or drops the selection
+    // mid-use; a board provisioned to a new site now appears without a reload.
+    function syncSites(statuses) {
+      const names = statuses.map(({ site }) => site);
+      const current = [...sel.options].map((o) => o.value);
+      if (names.length === current.length && names.every((n, i) => n === current[i])) return;
+
+      const chosen = sel.value;
       // new Option() sets textContent, not HTML. Site names come from MQTT
       // topics on a public anonymous broker, so anyone who can publish could
       // otherwise inject markup here.
-      sel.replaceChildren(...statuses.map(({ site }) => new Option(site)));
+      sel.replaceChildren(...names.map((site) => new Option(site)));
+      if (names.includes(chosen)) sel.value = chosen;
     }
 
     function fmtTime(iso) {
@@ -374,7 +386,9 @@
       for (const f of ['temp', 'humidity', 'pressure']) {
         $(f).textContent = lastSummary.averages?.[f] ?? '–';
       }
-      $('ext-range').textContent = `· ${range.options[range.selectedIndex].text}`;
+      const rangeLabel = `· ${range.options[range.selectedIndex].text}`;
+      $('avg-range').textContent = rangeLabel;
+      $('ext-range').textContent = rangeLabel;
       for (const card of document.querySelectorAll('.card.ext')) {
         const field = card.dataset.field;
         const which = card.querySelector('.seg .on').dataset.agg;
@@ -434,8 +448,12 @@
     sel.addEventListener('change', () => { refresh(); drawCharts(); });
     range.addEventListener('change', () => { refresh(); drawCharts(); });
 
-    function tick() { refresh(); renderSites(); }
-    loadSites().then(tick).catch((e) => fail(e.message));
+    // Status first so the dropdown has options before the first summary fetch.
+    async function tick() {
+      await refreshStatus();
+      refresh();
+    }
+    tick().catch((e) => fail(e.message));
     setInterval(tick, 30000);
   </script>
 </body>
