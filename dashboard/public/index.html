@@ -142,6 +142,11 @@
       color: #fff; background: var(--down); border: 1px solid var(--down);
     }
     button.danger:disabled { opacity: .5; cursor: not-allowed; }
+    button.plain {
+      font: inherit; font-size: .85rem; font-weight: 600; cursor: pointer;
+      padding: .45rem .9rem; border-radius: .45rem;
+      color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+    }
     .card .stamp {
       margin-top: .5rem; font-size: .72rem; color: var(--ink-2);
       font-variant-numeric: tabular-nums; min-height: 1em;
@@ -272,6 +277,7 @@
       <input type="password" id="admin-pw" autocomplete="current-password">
     </label>
     <div class="admin-actions">
+      <button type="button" id="btn-cancel" class="plain">Cancel</button>
       <button type="button" id="btn-reset" class="danger">Reset history</button>
       <button type="button" id="btn-remove" class="danger">Remove site</button>
     </div>
@@ -484,11 +490,23 @@
     const admin = $('admin');
     const adminToggle = $('toggle-admin');
 
+    // Closing always wipes the password field — leaving it filled behind a
+    // collapsed panel is a delete button one click from being armed.
+    function closeAdmin() {
+      $('admin-pw').value = '';
+      adminSay('', false);
+      admin.hidden = true;
+      adminToggle.classList.remove('open');
+    }
+
     adminToggle.addEventListener('click', () => {
-      admin.hidden = !admin.hidden;
-      adminToggle.classList.toggle('open', !admin.hidden);
-      if (!admin.hidden) adminHint();
+      if (!admin.hidden) return closeAdmin();
+      admin.hidden = false;
+      adminToggle.classList.add('open');
+      adminHint();
     });
+
+    $('btn-cancel').addEventListener('click', closeAdmin);
 
     function adminHint() {
       const rangeText = range.options[range.selectedIndex].text;

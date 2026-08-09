@@ -53,7 +53,7 @@ spec:
           valueFrom:
             secretKeyRef:
               name: influxdb-auth
-              key: dashboard-admin-password
+              key: dashadmin
               optional: true
         livenessProbe:
           httpGet:
