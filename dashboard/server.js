@@ -140,11 +140,24 @@ async function flux(query) {
 // go through here, so the UI can never offer a site the API would reject —
 // that mismatch is exactly what made poble.sec unselectable.
 async function listSites() {
+  // Deliberately NOT schema.tagValues: that reads the series index, where a
+  // tag value survives deletion of every point carrying it until the shard is
+  // compacted. A site removed via /api/admin/remove would linger as a ghost in
+  // the dropdown with no data behind it. Reading actual points means a site
+  // exists exactly as long as its data does. group+last is one row per site,
+  // the same shape allSitesLastSeen() uses, so it stays cheap.
+  //
+  // Range is all-time on purpose: a site that has been silent for months still
+  // belongs in the list as an offline pill. Only deleting its data removes it.
   const rows = await flux(
-    `import "influxdata/influxdb/schema"\n` +
-      `schema.tagValues(bucket: "${INFLUX_BUCKET}", tag: "site")`,
+    `from(bucket: "${INFLUX_BUCKET}")\n` +
+      `  |> range(start: 1970-01-01T00:00:00Z)\n` +
+      `  |> filter(fn: (r) => r._measurement == "telemetry")\n` +
+      `  |> group(columns: ["site"])\n` +
+      `  |> last()\n` +
+      `  |> keep(columns: ["site"])`,
   );
-  const all = [...new Set(rows.map((r) => r._value).filter(Boolean))].sort();
+  const all = [...new Set(rows.map((r) => r.site).filter(Boolean))].sort();
   const usable = all.filter((s) => SITE_RE.test(s));
   for (const s of all) {
     if (!SITE_RE.test(s)) {
