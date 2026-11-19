@@ -1,0 +1,620 @@
+====================================================================================================
+DRY RUN  |  mjolnir  |  remove "bootleg" from folder names + set Album tag to new folder name
+====================================================================================================
+folders: 153  |  folders with mp3s: 152  |  mp3s affected: 2013
+
+1969-bootleg_in_support_for_their_satanic_majesties
+   -> 1969-in_support_for_their_satanic_majesties   [7 mp3s]
+   album: "(bootleg) in support for their satanic majesties"   |   album -> 1969-in_support_for_their_satanic_majesties
+
+1969-bootleg_live_at_the_fillmore_west
+   -> 1969-live_at_the_fillmore_west   [7 mp3s]
+   album: "(bootleg) live at the fillmore west"   |   album -> 1969-live_at_the_fillmore_west
+
+1970-at_the_electric_factory_bootleg
+   -> 1970-at_the_electric_factory   [6 mp3s]
+   album: "at the electric factory bootleg"   |   album -> 1970-at_the_electric_factory
+
+1970-bootleg_ice_cream_in_the_foyer
+   -> 1970-ice_cream_in_the_foyer   [11 mp3s]
+   album: "(bootleg) ice cream in the foyer"   |   album -> 1970-ice_cream_in_the_foyer
+
+1970-bootleg_kensington_olympia
+   -> 1970-kensington_olympia   [7 mp3s]
+   album: "(bootleg) kensington olympia"   |   album -> 1970-kensington_olympia
+
+1970-bootleg_live_in_new_york
+   -> 1970-live_in_new_york   [10 mp3s]
+   album: "(bootleg) live in new york"   |   album -> 1970-live_in_new_york
+
+1971-bootleg_hyde_park
+   -> 1971-hyde_park   [6 mp3s]
+   album: "(bootleg) hyde park"   |   album -> 1971-hyde_park
+
+1972-bootleg_jamming_with_edwards
+   -> 1972-jamming_with_edwards   [5 mp3s]
+   album: "(bootleg) jamming with edwards"   |   album -> 1972-jamming_with_edwards
+
+1972-bootleg_you_can_t_do_that_baby
+   -> 1972-you_can_t_do_that_baby   [16 mp3s]
+   album: "(bootleg) you can't do that baby"   |   album -> 1972-you_can_t_do_that_baby
+
+1973-bootleg_live_in_edinburgh
+   -> 1973-live_in_edinburgh   [2 mp3s]
+   album: "(bootleg) live in edinburgh"   |   album -> 1973-live_in_edinburgh
+
+1977-ducks_on_the_wall_bootleg
+   -> 1977-ducks_on_the_wall   [11 mp3s]
+   album: "ducks on the wall bootleg"   |   album -> 1977-ducks_on_the_wall
+
+1977-bootleg_jesus_this_is_iggy
+   -> 1977-jesus_this_is_iggy   [12 mp3s]
+   album: "(bootleg) jesus, this is iggy"   |   album -> 1977-jesus_this_is_iggy
+
+1977-bootleg_live_with_fripp
+   -> 1977-live_with_fripp   [15 mp3s]
+   album: "(bootleg) live with fripp"   |   album -> 1977-live_with_fripp
+
+1977-bootleg_nashville_77
+   -> 1977-nashville_77   [19 mp3s]
+   album: "(bootleg) nashville '77"   |   album -> 1977-nashville_77
+
+1978-bootleg_athens_78
+   -> 1978-athens_78   [7 mp3s]
+   album: "(bootleg) athens '78"   |   album -> 1978-athens_78
+
+1979-bootleg_bottom_line_nyc
+   -> 1979-bottom_line_nyc   [12 mp3s]
+   album: "(bootleg) bottom line nyc"   |   album -> 1979-bottom_line_nyc
+
+1979-bootleg_journey_at_the_rainbow
+   -> 1979-journey_at_the_rainbow   [15 mp3s]
+   album: "(bootleg) journey at the rainbow"   |   album -> 1979-journey_at_the_rainbow
+
+1980-bootleg_southampton_university
+   -> 1980-southampton_university   [16 mp3s]
+   album: "(bootleg) southampton university"   |   album -> 1980-southampton_university
+
+1981-bootleg_fish_s_first_rehearsal
+   -> 1981-fish_s_first_rehearsal   [7 mp3s]
+   album: "(bootleg) fish's first rehearsal"   |   album -> 1981-fish_s_first_rehearsal
+
+1981-bootleg_fripp_returns_at_the_court_of_the_crimson_king
+   -> 1981-fripp_returns_at_the_court_of_the_crimson_king   [10 mp3s]
+   album: "(bootleg) fripp returns at the court of the crimson king"   |   album -> 1981-fripp_returns_at_the_court_of_the_crimson_king
+
+1981-bootleg_joyride_in_boston
+   -> 1981-joyride_in_boston   [18 mp3s]
+   album: "(bootleg) joyride in boston"   |   album -> 1981-joyride_in_boston
+
+1981-bootleg_live_at_the_saratoga_performance_arts_center
+   -> 1981-live_at_the_saratoga_performance_arts_center   [13 mp3s]
+   album: "(bootleg) live at the saratoga performance arts center"   |   album -> 1981-live_at_the_saratoga_performance_arts_center
+
+1982-bootleg_forgotten_show
+   -> 1982-forgotten_show   [9 mp3s]
+   album: "(bootleg) forgotten show"   |   album -> 1982-forgotten_show
+
+1982-bootleg_live_bfbs
+   -> 1982-live_bfbs   [8 mp3s]
+   album: "(bootleg) live bfbs"   |   album -> 1982-live_bfbs
+
+1982-bootleg_radio_clyde_glasgow_mayfair
+   -> 1982-radio_clyde_glasgow_mayfair   [7 mp3s]
+   album: "(bootleg) radio clyde glasgow mayfair"   |   album -> 1982-radio_clyde_glasgow_mayfair
+
+1983-bootleg_birmingham
+   -> 1983-birmingham   [9 mp3s]
+   album: "(bootleg) birmingham"   |   album -> 1983-birmingham
+
+1983-bootleg_markthalle_hamburg
+   -> 1983-markthalle_hamburg   [11 mp3s]
+   album: "(bootleg) markthalle hamburg"   |   album -> 1983-markthalle_hamburg
+
+1983-bootleg_toronto_83
+   -> 1983-toronto_83   [13 mp3s]
+   album: "(bootleg) toronto 83"   |   album -> 1983-toronto_83
+
+1983-bootleg_werchter
+   -> 1983-werchter   [13 mp3s]
+   album: "(bootleg) werchter"   |   album -> 1983-werchter
+
+1984-bootleg_tufnel_park
+   -> 1984-tufnel_park   [14 mp3s]
+   album: "(bootleg) tufnel park"   |   album -> 1984-tufnel_park
+
+1985-barrowlands_1985_bootleg
+   -> 1985-barrowlands_1985   [12 mp3s]
+   album: "barrowlands 1985 bootleg"   |   album -> 1985-barrowlands_1985
+
+1988-bootleg_coasters_edinburgh
+   -> 1988-coasters_edinburgh   [26 mp3s]
+   album: "(bootleg) coasters, edinburgh"   |   album -> 1988-coasters_edinburgh
+
+1988-sacramento_bootleg
+   -> 1988-sacramento   [17 mp3s]
+   album: "sacramento bootleg"   |   album -> 1988-sacramento
+
+1989-blossom_music_centre_bootleg
+   -> 1989-blossom_music_centre   [14 mp3s]
+   album: "blossom music centre bootleg"   |   album -> 1989-blossom_music_centre
+
+1989-irvine_live_1989_bootleg
+   -> 1989-irvine_live_1989   [14 mp3s]
+   album: "irvine live 1989 bootleg"   |   album -> 1989-irvine_live_1989
+
+1989-bootleg_live_in_manchester
+   -> 1989-live_in_manchester   [2 mp3s]
+   album: "(bootleg) live in manchester"   |   album -> 1989-live_in_manchester
+
+1990-bootleg_bielefeld_pc69_01_06_90
+   -> 1990-bielefeld_pc69_01_06_90   [6 mp3s]
+   album: "(bootleg) bielefeld, pc69 (01.06.90)"   |   album -> 1990-bielefeld_pc69_01_06_90
+
+1990-bootleg_live_for_love
+   -> 1990-live_for_love   [16 mp3s]
+   album: "(bootleg) live for love"   |   album -> 1990-live_for_love
+
+1991-bootleg_live_acoustic_in_london
+   -> 1991-live_acoustic_in_london   [6 mp3s]
+   album: "(bootleg) live acoustic in london"   |   album -> 1991-live_acoustic_in_london
+
+1992-bootleg_club_babyhead
+   -> 1992-club_babyhead   [13 mp3s]
+   album: "(bootleg) club babyhead"   |   album -> 1992-club_babyhead
+
+1992-live_at_the_newcastle_riverside_bootleg
+   -> 1992-live_at_the_newcastle_riverside   [7 mp3s]
+   album: "live at the newcastle riverside bootleg"   |   album -> 1992-live_at_the_newcastle_riverside
+
+1992-live_usa_bootleg
+   -> 1992-live_usa   [3 mp3s]
+   album: "live usa (bootleg)"   |   album -> 1992-live_usa
+
+1992-bootleg_magic_moments
+   -> 1992-magic_moments   [7 mp3s]
+   album: "(bootleg) magic moments"   |   album -> 1992-magic_moments
+
+1992-bootleg_power_and_glory
+   -> 1992-power_and_glory   [16 mp3s]
+   album: "(bootleg) power and glory"   |   album -> 1992-power_and_glory
+
+1993-fox_theatre_boulder_bootleg
+   -> 1993-fox_theatre_boulder   [11 mp3s]
+   album: "fox theatre boulder bootleg"   |   album -> 1993-fox_theatre_boulder
+
+1993-live_in_new_york_yeah_it_s_a_bootleg
+   -> 1993-live_in_new_york_yeah_it_s_a   [7 mp3s]
+   album: "live in new york (yeah it's a bootleg)"   |   album -> 1993-live_in_new_york_yeah_it_s_a
+
+1993-bootleg_rockpalast
+   -> 1993-rockpalast   [15 mp3s]
+   album: "(bootleg) rockpalast"   |   album -> 1993-rockpalast
+
+1993-bootleg_the_warehouse_toronto
+   -> 1993-the_warehouse_toronto   [11 mp3s]
+   album: "(bootleg) the warehouse, toronto"   |   album -> 1993-the_warehouse_toronto
+
+1994-bootleg_eden_s_children
+   -> 1994-eden_s_children   [18 mp3s]
+   album: "(bootleg) eden's children"   |   album -> 1994-eden_s_children
+
+1994-bootleg_shoreline_amphiteatre
+   -> 1994-shoreline_amphiteatre   [15 mp3s]
+   album: "(bootleg) shoreline amphiteatre"   |   album -> 1994-shoreline_amphiteatre
+
+1994-bootleg_taetro_palido
+   -> 1994-taetro_palido   [13 mp3s]
+   album: "(bootleg) taetro palido"   |   album -> 1994-taetro_palido
+
+1994-woodstock_bootleg
+   -> 1994-woodstock   [13 mp3s]
+   album: "woodstock bootleg"   |   album -> 1994-woodstock
+
+1995-b_boom__official_bootleg__live_in_argentina
+   -> 1995-b_boom_official_live_in_argentina   [19 mp3s]
+   album: "b’boom: official bootleg – live in argentina"   |   album -> 1995-b_boom_official_live_in_argentina
+
+1995-bootleg_live_london_and_paris
+   -> 1995-live_london_and_paris   [5 mp3s]
+   album: "[bootleg] live london and paris"   |   album -> 1995-live_london_and_paris
+
+1995-bootleg_live_with_bowie_in_saint_louis
+   -> 1995-live_with_bowie_in_saint_louis   [15 mp3s]
+   album: "(bootleg) live with bowie in saint louis"   |   album -> 1995-live_with_bowie_in_saint_louis
+
+1995-bootleg_rare_on_main_street
+   -> 1995-rare_on_main_street   [15 mp3s]
+   album: "(bootleg) rare on main street"   |   album -> 1995-rare_on_main_street
+
+1996-bootleg_i_alive
+   -> 1996-i_alive   [9 mp3s]
+   album: "(bootleg) i alive"   |   album -> 1996-i_alive
+
+1997-bootleg_cirkus_stockholm
+   -> 1997-cirkus_stockholm   [12 mp3s]
+   album: "(bootleg) cirkus, stockholm"   |   album -> 1997-cirkus_stockholm
+
+1997-bootleg_concord_pavillion
+   -> 1997-concord_pavillion   [14 mp3s]
+   album: "(bootleg) concord pavillion"   |   album -> 1997-concord_pavillion
+
+1997-bootleg_geisenkirchen
+   -> 1997-geisenkirchen   [21 mp3s]
+   album: "(bootleg) geisenkirchen"   |   album -> 1997-geisenkirchen
+
+1997-bootleg_hard_rock_fest
+   -> 1997-hard_rock_fest   [7 mp3s]
+   album: ""   |   album -> 1997-hard_rock_fest
+
+1997-bootleg_live_in_mexico
+   -> 1997-live_in_mexico   [22 mp3s]
+   album: "(bootleg) live in mexico"   |   album -> 1997-live_in_mexico
+
+1998-10_anni_official_bootleg
+   -> 1998-10_anni_official   [9 mp3s]
+   album: "10 anni - official bootleg"   |   album -> 1998-10_anni_official
+
+1998-bootleg_chameleon_club_98
+   -> 1998-chameleon_club_98   [12 mp3s]
+   album: "(bootleg) chameleon club '98"   |   album -> 1998-chameleon_club_98
+
+1998-eathling_chronicles_bootleg
+   -> 1998-eathling_chronicles   [3 mp3s]
+   album: "eathling chronicles bootleg"   |   album -> 1998-eathling_chronicles
+
+1998-bootleg_erie_civic_center
+   -> 1998-erie_civic_center   [15 mp3s]
+   album: "(bootleg) erie civic center"   |   album -> 1998-erie_civic_center
+
+1998-bootleg_intimate_interactive
+   -> 1998-intimate_interactive   [16 mp3s]
+   album: "(bootleg) intimate & interactive"   |   album -> 1998-intimate_interactive
+
+1998-bootleg_live_at_the_rock_am_ring
+   -> 1998-live_at_the_rock_am_ring   [15 mp3s]
+   album: "(bootleg) live at the rock am ring"   |   album -> 1998-live_at_the_rock_am_ring
+
+1999-b-sides_and_rarities_bootleg
+   -> 1999-b-sides_and_rarities   [21 mp3s]
+   album: "b-sides and rarities (bootleg)"   |   album -> 1999-b-sides_and_rarities
+
+1999-bootleg_dogs_on_the_run
+   -> 1999-dogs_on_the_run   [11 mp3s]
+   album: "(bootleg) dogs on the run"   |   album -> 1999-dogs_on_the_run
+
+1999-bootleg_forever_alone
+   -> 1999-forever_alone   [15 mp3s]
+   album: "(bootleg) forever alone"   |   album -> 1999-forever_alone
+
+1999-bootleg_glastonbury
+   -> 1999-glastonbury   [12 mp3s]
+   album: "(bootleg) glastonbury"   |   album -> 1999-glastonbury
+
+1999-bootleg_live_at_the_circus_stockholm
+   -> 1999-live_at_the_circus_stockholm   [13 mp3s]
+   album: "(bootleg) live at the circus - stockholm"   |   album -> 1999-live_at_the_circus_stockholm
+
+1999-bootleg_live_in_belgium
+   -> 1999-live_in_belgium   [8 mp3s]
+   album: "(bootleg) live in belgium"   |   album -> 1999-live_in_belgium
+
+1999-bootleg_lost_souls
+   -> 1999-lost_souls   [7 mp3s]
+   album: "(bootleg) lost souls"   |   album -> 1999-lost_souls
+
+1999-melkweg_bootleg
+   -> 1999-melkweg   [15 mp3s]
+   album: "melkweg bootleg"   |   album -> 1999-melkweg
+
+2000-bootleg_gatufesten_sundsvall
+   -> 2000-gatufesten_sundsvall   [11 mp3s]
+   album: "(bootleg) gatufesten sundsvall"   |   album -> 2000-gatufesten_sundsvall
+
+2000-bootleg_glastonbury_festival
+   -> 2000-glastonbury_festival   [15 mp3s]
+   album: "(bootleg) glastonbury festival"   |   album -> 2000-glastonbury_festival
+
+2000-bootleg_hershey_park_arena
+   -> 2000-hershey_park_arena   [7 mp3s]
+   album: "(bootleg) hershey park arena"   |   album -> 2000-hershey_park_arena
+
+2000-bootleg_hob_live
+   -> 2000-hob_live   [12 mp3s]
+   album: "(bootleg) hob live"   |   album -> 2000-hob_live
+
+2000-bootleg_i_fuckin_hate_football
+   -> 2000-i_fuckin_hate_football   [20 mp3s]
+   album: "(bootleg) i fuckin' hate football"   |   album -> 2000-i_fuckin_hate_football
+
+2000-bootleg_irving_plaza
+   -> 2000-irving_plaza   [16 mp3s]
+   album: "(bootleg) irving plaza"   |   album -> 2000-irving_plaza
+
+2000-bootleg_live_in_buenos_aires
+   -> 2000-live_in_buenos_aires   [22 mp3s]
+   album: "(bootleg) live in buenos aires"   |   album -> 2000-live_in_buenos_aires
+
+2000-bootleg_playin_back_ome
+   -> 2000-playin_back_ome   [12 mp3s]
+   album: "(bootleg) playin back ome"   |   album -> 2000-playin_back_ome
+
+2000-bootleg_rio_2000
+   -> 2000-rio_2000   [4 mp3s]
+   album: "(bootleg) rio 2000"   |   album -> 2000-rio_2000
+
+2000-bootleg_walk_the_starlight
+   -> 2000-walk_the_starlight   [17 mp3s]
+   album: "(bootleg) walk the starlight"   |   album -> 2000-walk_the_starlight
+
+2001-bootleg_at_le_bataclan_paris
+   -> 2001-at_le_bataclan_paris   [9 mp3s]
+   album: "(bootleg) at le bataclan paris"   |   album -> 2001-at_le_bataclan_paris
+
+2001-bootleg_charlotte_coliseum
+   -> 2001-charlotte_coliseum   [24 mp3s]
+   album: "(bootleg) charlotte coliseum"   |   album -> 2001-charlotte_coliseum
+
+2001-cirkus_stockholm_bootleg
+   -> 2001-cirkus_stockholm   [9 mp3s]
+   album: "cirkus stockholm bootleg"   |   album -> 2001-cirkus_stockholm
+
+2001-bootleg_live_at_hultsfred
+   -> 2001-live_at_hultsfred   [8 mp3s]
+   album: "(bootleg) live at hultsfred"   |   album -> 2001-live_at_hultsfred
+
+2001-bootleg_live_at_l_olympia
+   -> 2001-live_at_l_olympia   [20 mp3s]
+   album: "(bootleg) live at l'olympia"   |   album -> 2001-live_at_l_olympia
+
+2001-bootleg_live_at_the_münchenbryggeriet
+   -> 2001-live_at_the_münchenbryggeriet   [12 mp3s]
+   album: "(bootleg) live at the münchenbryggeriet"   |   album -> 2001-live_at_the_münchenbryggeriet
+
+2001-bootleg_live_in_vancouver
+   -> 2001-live_in_vancouver   [5 mp3s]
+   album: "(bootleg) live in vancouver"   |   album -> 2001-live_in_vancouver
+
+2001-bootleg_osaka
+   -> 2001-osaka   [22 mp3s]
+   album: "(bootleg) osaka"   |   album -> 2001-osaka
+
+2001-bootleg_p3_live_-_hultsfred_festival
+   -> 2001-p3_live-hultsfred_festival   [14 mp3s]
+   album: "(bootleg) p3 live - hultsfred festival"   |   album -> 2001-p3_live-hultsfred_festival
+
+2001-bootleg_rock_am_ring
+   -> 2001-rock_am_ring   [25 mp3s]
+   album: "(bootleg) rock am ring"   |   album -> 2001-rock_am_ring
+
+2001-bootleg_san_siro
+   -> 2001-san_siro   [21 mp3s]
+   album: "(bootleg) san siro"   |   album -> 2001-san_siro
+
+2002-bootleg_liverpool_02
+   -> 2002-liverpool_02   [20 mp3s]
+   album: "(bootleg) liverpool '02"   |   album -> 2002-liverpool_02
+
+2002-bootleg_the_heathen_chemistry_concert
+   -> 2002-the_heathen_chemistry_concert   [24 mp3s]
+   album: "(bootleg) the heathen chemistry concert"   |   album -> 2002-the_heathen_chemistry_concert
+
+2003-bootleg_live_at_cirkus
+   -> 2003-live_at_cirkus   [17 mp3s]
+   album: "(bootleg) live at cirkus"   |   album -> 2003-live_at_cirkus
+
+2003-live_at_the_circus_stockholm_bootleg
+   -> 2003-live_at_the_circus_stockholm   [13 mp3s]
+   album: "live at the circus stockholm bootleg"   |   album -> 2003-live_at_the_circus_stockholm
+
+2003-bootleg_liverpool_docks_arena
+   -> 2003-liverpool_docks_arena   [18 mp3s]
+   album: "(bootleg) liverpool docks arena"   |   album -> 2003-liverpool_docks_arena
+
+2003-bootleg_setlist_bingo
+   -> 2003-setlist_bingo   [12 mp3s]
+   album: "(bootleg) setlist bingo"   |   album -> 2003-setlist_bingo
+
+2004-bootleg_providence_ri
+   -> 2004-providence_ri   [27 mp3s]
+   album: "(bootleg) providence ri"   |   album -> 2004-providence_ri
+
+2005-bootleg_live_at_the_barbican
+   -> 2005-live_at_the_barbican   [18 mp3s]
+   album: "(bootleg) live at the barbican"   |   album -> 2005-live_at_the_barbican
+
+2005-bootleg_live_in_tokyo
+   -> 2005-live_in_tokyo   [1 mp3s]
+   album: "(bootleg) live in tokyo"   |   album -> 2005-live_in_tokyo
+
+2005-bootleg_maison_de_la_radio
+   -> 2005-maison_de_la_radio   [15 mp3s]
+   album: "(bootleg) maison de la radio"   |   album -> 2005-maison_de_la_radio
+
+2005-montreal_2005_bootleg
+   -> 2005-montreal_2005   [17 mp3s]
+   album: "montreal 2005 bootleg"   |   album -> 2005-montreal_2005
+
+2005-sweetheart_bootleg
+   -> 2005-sweetheart   [13 mp3s]
+   album: "sweetheart (bootleg)"   |   album -> 2005-sweetheart
+
+2005-bootleg_wicker_park_summer_fest
+   -> 2005-wicker_park_summer_fest   [9 mp3s]
+   album: "(bootleg) wicker park summer fest"   |   album -> 2005-wicker_park_summer_fest
+
+2005-wireless_festival_bootleg
+   -> 2005-wireless_festival   [15 mp3s]
+   album: "wireless festival bootleg"   |   album -> 2005-wireless_festival
+
+2006-bootleg_aucknald_nz
+   -> 2006-aucknald_nz   [15 mp3s]
+   album: "(bootleg) aucknald, nz"   |   album -> 2006-aucknald_nz
+
+2006-bootleg_berlin_live
+   -> 2006-berlin_live   [13 mp3s]
+   album: "(bootleg) berlin live"   |   album -> 2006-berlin_live
+
+2006-bootleg_line_music_cafe_minneapolis
+   -> 2006-line_music_cafe_minneapolis   [1 mp3s]
+   album: "(bootleg) line music cafe, minneapolis"   |   album -> 2006-line_music_cafe_minneapolis
+
+2006-bootleg_ucl_bloomsbury_theatre
+   -> 2006-ucl_bloomsbury_theatre   [13 mp3s]
+   album: "(bootleg) ucl bloomsbury theatre"   |   album -> 2006-ucl_bloomsbury_theatre
+
+2007-acoustic_in_nashville_bootleg_no_2
+   -> 2007-acoustic_in_nashville_no_2   [5 mp3s]
+   album: "acoustic in nashville: bootleg no. 2"   |   album -> 2007-acoustic_in_nashville_no_2
+
+2007-bootleg_bristol_carling_academy
+   -> 2007-bristol_carling_academy   [15 mp3s]
+   album: "(bootleg) bristol carling academy"   |   album -> 2007-bristol_carling_academy
+
+2007-bootleg_festival_de_vina_del_mar
+   -> 2007-festival_de_vina_del_mar   [16 mp3s]
+   album: "(bootleg) festival de vina del mar"   |   album -> 2007-festival_de_vina_del_mar
+
+2007-bootleg_live_at_oya_festival
+   -> 2007-live_at_oya_festival   [13 mp3s]
+   album: "(bootleg) live at oya festival"   |   album -> 2007-live_at_oya_festival
+
+2007-bootleg_live_at_rock_am_ring
+   -> 2007-live_at_rock_am_ring   [1 mp3s]
+   album: "(bootleg) live at rock am ring "   |   album -> 2007-live_at_rock_am_ring
+
+2007-bootleg_live_at_rockamring
+   -> 2007-live_at_rockamring   [1 mp3s]
+   album: "(bootleg) live at rockamring"   |   album -> 2007-live_at_rockamring
+
+2007-bootleg_live_at_the_shepherd_s_bush_empire
+   -> 2007-live_at_the_shepherd_s_bush_empire   [15 mp3s]
+   album: "(bootleg) live at the shepherd's bush empire"   |   album -> 2007-live_at_the_shepherd_s_bush_empire
+
+2007-bootleg_live_in_berlin
+   -> 2007-live_in_berlin   [1 mp3s]
+   album: "(bootleg) live in berlin"   |   album -> 2007-live_in_berlin
+
+2007-bootleg_mod_club_toronto
+   -> 2007-mod_club_toronto   [15 mp3s]
+   album: "(bootleg) mod club toronto"   |   album -> 2007-mod_club_toronto
+
+2007-bootleg_orpheum_theatre
+   -> 2007-orpheum_theatre   [20 mp3s]
+   album: "(bootleg) orpheum theatre"   |   album -> 2007-orpheum_theatre
+
+2007-bootleg_port_zelande
+   -> 2007-port_zelande   [15 mp3s]
+   album: "(bootleg) port zelande"   |   album -> 2007-port_zelande
+
+2007-bootleg_reunion_tour
+   -> 2007-reunion_tour   [16 mp3s]
+   album: "(bootleg) reunion tour"   |   album -> 2007-reunion_tour
+
+2007-bootleg_roundhouse
+   -> 2007-roundhouse   [19 mp3s]
+   album: "(bootleg) roundhouse"   |   album -> 2007-roundhouse
+
+2008-bonnaroo_bootleg
+   -> 2008-bonnaroo   [35 mp3s]
+   album: "bonnaroo (bootleg)"   |   album -> 2008-bonnaroo
+
+2008-bootleg_live_at_emo_s
+   -> 2008-live_at_emo_s   [20 mp3s]
+   album: "(bootleg) live at emo's"   |   album -> 2008-live_at_emo_s
+
+2009-bootleg_a_smell_of_recognition
+   -> 2009-a_smell_of_recognition   [20 mp3s]
+   album: "(bootleg) a smell of recognition"   |   album -> 2009-a_smell_of_recognition
+
+2009-bootleg_beacon_theatre
+   -> 2009-beacon_theatre   [12 mp3s]
+   album: "(bootleg) beacon theatre"   |   album -> 2009-beacon_theatre
+
+2009-bootleg_live_at_off_festival
+   -> 2009-live_at_off_festival   [18 mp3s]
+   album: "(bootleg) live at off festival"   |   album -> 2009-live_at_off_festival
+
+2009-bootleg_live_at_siesta
+   -> 2009-live_at_siesta   [1 mp3s]
+   album: "(bootleg) live at siesta"   |   album -> 2009-live_at_siesta
+
+2009-bootleg_live_in_santiago
+   -> 2009-live_in_santiago   [28 mp3s]
+   album: "(bootleg) live in santiago"   |   album -> 2009-live_in_santiago
+
+2009-bootleg_u2360_barcelona
+   -> 2009-u2360_barcelona   [26 mp3s]
+   album: "(bootleg) u2360 barcelona"   |   album -> 2009-u2360_barcelona
+
+2010-bootleg_atoms_for_peace
+   -> 2010-atoms_for_peace   [19 mp3s]
+   album: "(bootleg) atoms for peace"   |   album -> 2010-atoms_for_peace
+
+2010-eastwest_studios_bootleg
+   -> 2010-eastwest_studios   [7 mp3s]
+   album: "eastwest studios bootleg"   |   album -> 2010-eastwest_studios
+
+2010-bootleg_oakland
+   -> 2010-oakland   [22 mp3s]
+   album: "(bootleg) oakland"   |   album -> 2010-oakland
+
+2011-bootleg_live_at_the_vega_copenhagen
+   -> 2011-live_at_the_vega_copenhagen   [10 mp3s]
+   album: "(bootleg) live at the vega, copenhagen"   |   album -> 2011-live_at_the_vega_copenhagen
+
+2013-coachella_2013_bootleg
+   -> 2013-coachella_2013   [12 mp3s]
+   album: "coachella 2013 bootleg"   |   album -> 2013-coachella_2013
+
+2016-chicago_bootleg
+   -> 2016-chicago   [33 mp3s]
+   album: "chicago bootleg"   |   album -> 2016-chicago
+
+2016-fairfield_bootleg
+   -> 2016-fairfield   [24 mp3s]
+   album: "fairfield bootleg"   |   album -> 2016-fairfield
+
+2016-glastonbury_festival_2016_bootleg
+   -> 2016-glastonbury_festival_2016   [11 mp3s]
+   album: "glastonbury festival 2016 bootleg"   |   album -> 2016-glastonbury_festival_2016
+
+2016-sónar_festival_bootleg
+   -> 2016-sónar_festival   [14 mp3s]
+   album: "sónar festival bootleg"   |   album -> 2016-sónar_festival
+
+2018-steve_wynn_live_bootleg
+   -> 2018-steve_wynn_live   [6 mp3s]
+   album: "steve wynn live bootleg"   |   album -> 2018-steve_wynn_live
+
+2020-bootleg_lyon
+   -> 2020-lyon   [15 mp3s]
+   album: "(bootleg) lyon"   |   album -> 2020-lyon
+
+(Bootleg) Dim The Lights
+   -> Dim The Lights   [12 mp3s]
+   album: "dim the lights bootleg"   |   album -> Dim The Lights
+
+(Bootleg) When We Were Young
+   -> When We Were Young   [10 mp3s]
+   album: "when we were young bootleg"   |   album -> When We Were Young
+
+bootleg_an_morrison_meets_bob_dylan_a
+   -> an_morrison_meets_bob_dylan_a   [19 mp3s]
+   album: "van morrison meets bob dylan a"   |   album -> an_morrison_meets_bob_dylan_a
+
+bootleg_emerald_dreams_dusseldorf
+   -> emerald_dreams_dusseldorf   [18 mp3s]
+   album: "(bootleg) emerald dreams dusseldorf"   |   album -> emerald_dreams_dusseldorf
+
+(bootleg)_live_at_the_930_club
+   -> live_at_the_930_club   [0 mp3s]
+   album: "(no mp3s)"   |   rename only (no mp3s)
+
+(bootleg)_zoo_tv_live
+   -> zoo_tv_live   [14 mp3s]
+   album: "(bootleg) zoo tv live"   |   album -> zoo_tv_live
+
+----------------------------------------------------------------------------------------------------
+SUMMARY: renames=153 | folders whose album tag will be updated=152 | already-matching=0 | rename-only (no mp3s)=1
+----------------------------------------------------------------------------------------------------

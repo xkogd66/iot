@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clickhouse
+  namespace: iot
+  labels:
+    app: clickhouse
+spec:
+  replicas: 1
+  # Recreate: RWX NFS PVC, two pods must never write /var/lib/clickhouse at once.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: clickhouse
+  template:
+    metadata:
+      labels:
+        app: clickhouse
+    spec:
+      containers:
+      - name: clickhouse
+        image: clickhouse/clickhouse-server:25.8
+        ports:
+        - containerPort: 8123
+          name: http
+        - containerPort: 9000
+          name: native
+        env:
+        - name: CLICKHOUSE_USER
+          valueFrom:
+            secretKeyRef:
+              name: clickhouse-auth
+              key: username
+        - name: CLICKHOUSE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: clickhouse-auth
+              key: password
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/clickhouse
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: clickhouse-data
